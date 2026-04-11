@@ -1,0 +1,544 @@
+{
+  "info": {
+    "name": "Music Backend API",
+    "description": "Full API collection for the Music Backend (Django + DRF). Base URL: http://localhost:8000/api/v1\n\nWorkflow:\n1. Register or Login → copy the `access` token\n2. In each protected request set Header: Authorization: Bearer <access>\n3. Use the `refresh` token at /auth/token/refresh/ when access expires",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api/v1" },
+    { "key": "access",   "value": "" },
+    { "key": "refresh",  "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register/", "host": ["{{base_url}}"], "path": ["auth", "register", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"password\": \"strongpass123\",\n  \"password2\": \"strongpass123\"\n}"
+            },
+            "description": "Create a new account. Returns user profile + JWT tokens."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"alice@example.com\",\n    \"username\": \"alice\",\n    \"avatar\": null,\n    \"bio\": \"\",\n    \"created_at\": \"2024-03-15T10:00:00Z\"\n  },\n  \"tokens\": {\n    \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — email taken",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"email\": [\"A user with this email already exists.\"]\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('access',  json.tokens.access);",
+                  "pm.collectionVariables.set('refresh', json.tokens.refresh);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/login/", "host": ["{{base_url}}"], "path": ["auth", "login", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"strongpass123\"\n}"
+            },
+            "description": "Login with email + password. The test script auto-saves tokens to collection variables."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"alice@example.com\",\n    \"username\": \"alice\",\n    \"avatar\": null,\n    \"bio\": \"\",\n    \"created_at\": \"2024-03-15T10:00:00Z\"\n  },\n  \"tokens\": {\n    \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"detail\": \"Invalid credentials.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": { "raw": "{{base_url}}/auth/logout/", "host": ["{{base_url}}"], "path": ["auth", "logout", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh}}\"\n}"
+            },
+            "description": "Blacklists the refresh token. Pass the refresh token in the body."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"detail\": \"Successfully logged out.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/auth/me/", "host": ["{{base_url}}"], "path": ["auth", "me", ""] },
+            "description": "Returns the authenticated user's profile."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"avatar\": null,\n  \"bio\": \"Music lover\",\n  \"created_at\": \"2024-03-15T10:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/auth/me/", "host": ["{{base_url}}"], "path": ["auth", "me", ""] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bio",      "value": "Music lover & DJ", "type": "text" },
+                { "key": "username", "value": "alice_dj",         "type": "text" }
+              ]
+            },
+            "description": "Partial update of the current user's profile. Supports avatar upload (multipart)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice_dj\",\n  \"avatar\": null,\n  \"bio\": \"Music lover & DJ\",\n  \"created_at\": \"2024-03-15T10:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/token/refresh/", "host": ["{{base_url}}"], "path": ["auth", "token", "refresh", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh}}\"\n}"
+            },
+            "description": "Get a new access token using the refresh token."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        }
+
+      ]
+    },
+
+    {
+      "name": "Albums",
+      "item": [
+
+        {
+          "name": "List Albums",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/music/albums/", "host": ["{{base_url}}"], "path": ["music", "albums", ""] },
+            "description": "Public endpoint — no auth required."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Kind of Blue\",\n    \"artist\": \"Miles Davis\",\n    \"cover_image\": null,\n    \"release_year\": 1959,\n    \"uploaded_by\": 1,\n    \"uploaded_by_username\": \"alice\",\n    \"track_count\": 5,\n    \"tracks\": [],\n    \"created_at\": \"2024-03-15T11:00:00Z\",\n    \"updated_at\": \"2024-03-15T11:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+
+        {
+          "name": "Create Album",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/albums/", "host": ["{{base_url}}"], "path": ["music", "albums", ""] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",        "value": "Kind of Blue",  "type": "text" },
+                { "key": "artist",       "value": "Miles Davis",   "type": "text" },
+                { "key": "release_year", "value": "1959",          "type": "text" }
+              ]
+            },
+            "description": "Create an album. Automatically linked to the authenticated user."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Kind of Blue\",\n  \"artist\": \"Miles Davis\",\n  \"cover_image\": null,\n  \"release_year\": 1959,\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"track_count\": 0,\n  \"tracks\": [],\n  \"created_at\": \"2024-03-15T11:00:00Z\",\n  \"updated_at\": \"2024-03-15T11:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get Album",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/music/albums/1/", "host": ["{{base_url}}"], "path": ["music", "albums", "1", ""] },
+            "description": "Public endpoint."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Kind of Blue\",\n  \"artist\": \"Miles Davis\",\n  \"cover_image\": null,\n  \"release_year\": 1959,\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"track_count\": 2,\n  \"tracks\": [\n    {\n      \"id\": 1,\n      \"title\": \"So What\",\n      \"artist\": \"Miles Davis\",\n      \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n      \"duration\": 562,\n      \"genre\": \"Jazz\",\n      \"album\": 1,\n      \"album_title\": \"Kind of Blue\",\n      \"uploaded_by\": 1,\n      \"uploaded_by_username\": \"alice\",\n      \"created_at\": \"2024-03-15T11:05:00Z\",\n      \"updated_at\": \"2024-03-15T11:05:00Z\"\n    }\n  ],\n  \"created_at\": \"2024-03-15T11:00:00Z\",\n  \"updated_at\": \"2024-03-15T11:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Update Album (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/albums/1/", "host": ["{{base_url}}"], "path": ["music", "albums", "1", ""] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "release_year", "value": "1959", "type": "text" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Kind of Blue\",\n  \"artist\": \"Miles Davis\",\n  \"cover_image\": null,\n  \"release_year\": 1959,\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"track_count\": 0,\n  \"tracks\": [],\n  \"created_at\": \"2024-03-15T11:00:00Z\",\n  \"updated_at\": \"2024-03-15T12:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Delete Album",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/albums/1/", "host": ["{{base_url}}"], "path": ["music", "albums", "1", ""] }
+          },
+          "response": [
+            { "name": "204 No Content", "status": "No Content", "code": 204, "body": "" }
+          ]
+        }
+
+      ]
+    },
+
+    {
+      "name": "Tracks",
+      "item": [
+
+        {
+          "name": "List Tracks",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/music/tracks/", "host": ["{{base_url}}"], "path": ["music", "tracks", ""] },
+            "description": "Public endpoint — no auth required."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"So What\",\n    \"artist\": \"Miles Davis\",\n    \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n    \"duration\": 562,\n    \"genre\": \"Jazz\",\n    \"album\": 1,\n    \"album_title\": \"Kind of Blue\",\n    \"uploaded_by\": 1,\n    \"uploaded_by_username\": \"alice\",\n    \"created_at\": \"2024-03-15T11:05:00Z\",\n    \"updated_at\": \"2024-03-15T11:05:00Z\"\n  }\n]"
+            }
+          ]
+        },
+
+        {
+          "name": "Upload Track",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/tracks/", "host": ["{{base_url}}"], "path": ["music", "tracks", ""] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",      "value": "So What",     "type": "text" },
+                { "key": "artist",     "value": "Miles Davis", "type": "text" },
+                { "key": "duration",   "value": "562",         "type": "text" },
+                { "key": "genre",      "value": "Jazz",        "type": "text" },
+                { "key": "album",      "value": "1",           "type": "text" },
+                { "key": "audio_file", "value": "",            "type": "file", "description": "Select an mp3/wav/ogg file" }
+              ]
+            },
+            "description": "Upload a track (multipart/form-data). Automatically linked to the authenticated user."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"So What\",\n  \"artist\": \"Miles Davis\",\n  \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n  \"duration\": 562,\n  \"genre\": \"Jazz\",\n  \"album\": 1,\n  \"album_title\": \"Kind of Blue\",\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"created_at\": \"2024-03-15T11:05:00Z\",\n  \"updated_at\": \"2024-03-15T11:05:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — invalid format",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"audio_file\": [\"Unsupported audio format. Allowed: mp3, wav, ogg, flac, m4a.\"]\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get Track",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/tracks/1/", "host": ["{{base_url}}"], "path": ["music", "tracks", "1", ""] }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"So What\",\n  \"artist\": \"Miles Davis\",\n  \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n  \"duration\": 562,\n  \"genre\": \"Jazz\",\n  \"album\": 1,\n  \"album_title\": \"Kind of Blue\",\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"created_at\": \"2024-03-15T11:05:00Z\",\n  \"updated_at\": \"2024-03-15T11:05:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Update Track (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/tracks/1/", "host": ["{{base_url}}"], "path": ["music", "tracks", "1", ""] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "genre", "value": "Modal Jazz", "type": "text" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"So What\",\n  \"artist\": \"Miles Davis\",\n  \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n  \"duration\": 562,\n  \"genre\": \"Modal Jazz\",\n  \"album\": 1,\n  \"album_title\": \"Kind of Blue\",\n  \"uploaded_by\": 1,\n  \"uploaded_by_username\": \"alice\",\n  \"created_at\": \"2024-03-15T11:05:00Z\",\n  \"updated_at\": \"2024-03-15T12:05:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Delete Track",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/music/tracks/1/", "host": ["{{base_url}}"], "path": ["music", "tracks", "1", ""] }
+          },
+          "response": [
+            { "name": "204 No Content", "status": "No Content", "code": 204, "body": "" }
+          ]
+        }
+
+      ]
+    },
+
+    {
+      "name": "Playlists",
+      "item": [
+
+        {
+          "name": "List Playlists",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/playlists/", "host": ["{{base_url}}"], "path": ["playlists", ""] },
+            "description": "Auth users see public playlists + their own private ones. Anonymous users see only public."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Morning Vibes\",\n    \"description\": \"Chill tracks to start the day\",\n    \"is_public\": true,\n    \"owner\": 1,\n    \"owner_username\": \"alice\",\n    \"track_count\": 3,\n    \"tracks\": [],\n    \"created_at\": \"2024-03-15T12:00:00Z\",\n    \"updated_at\": \"2024-03-15T12:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+
+        {
+          "name": "Create Playlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/playlists/", "host": ["{{base_url}}"], "path": ["playlists", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Morning Vibes\",\n  \"description\": \"Chill tracks to start the day\",\n  \"is_public\": true\n}"
+            },
+            "description": "Create a playlist linked to the authenticated user."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Morning Vibes\",\n  \"description\": \"Chill tracks to start the day\",\n  \"is_public\": true,\n  \"owner\": 1,\n  \"owner_username\": \"alice\",\n  \"track_count\": 0,\n  \"tracks\": [],\n  \"created_at\": \"2024-03-15T12:00:00Z\",\n  \"updated_at\": \"2024-03-15T12:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Get Playlist",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/playlists/1/", "host": ["{{base_url}}"], "path": ["playlists", "1", ""] }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Morning Vibes\",\n  \"description\": \"Chill tracks to start the day\",\n  \"is_public\": true,\n  \"owner\": 1,\n  \"owner_username\": \"alice\",\n  \"track_count\": 1,\n  \"tracks\": [\n    {\n      \"id\": 1,\n      \"title\": \"So What\",\n      \"artist\": \"Miles Davis\",\n      \"audio_file\": \"http://localhost:8000/media/tracks/so_what.mp3\",\n      \"duration\": 562,\n      \"genre\": \"Jazz\",\n      \"album\": 1,\n      \"album_title\": \"Kind of Blue\",\n      \"uploaded_by\": 1,\n      \"uploaded_by_username\": \"alice\",\n      \"created_at\": \"2024-03-15T11:05:00Z\",\n      \"updated_at\": \"2024-03-15T11:05:00Z\"\n    }\n  ],\n  \"created_at\": \"2024-03-15T12:00:00Z\",\n  \"updated_at\": \"2024-03-15T12:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Update Playlist (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/playlists/1/", "host": ["{{base_url}}"], "path": ["playlists", "1", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Morning Vibes ☕\",\n  \"is_public\": false\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Morning Vibes ☕\",\n  \"description\": \"Chill tracks to start the day\",\n  \"is_public\": false,\n  \"owner\": 1,\n  \"owner_username\": \"alice\",\n  \"track_count\": 0,\n  \"tracks\": [],\n  \"created_at\": \"2024-03-15T12:00:00Z\",\n  \"updated_at\": \"2024-03-15T13:00:00Z\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Delete Playlist",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/playlists/1/", "host": ["{{base_url}}"], "path": ["playlists", "1", ""] }
+          },
+          "response": [
+            { "name": "204 No Content", "status": "No Content", "code": 204, "body": "" }
+          ]
+        },
+
+        {
+          "name": "Add Track to Playlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/playlists/1/tracks/add/", "host": ["{{base_url}}"], "path": ["playlists", "1", "tracks", "add", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"track_id\": 1,\n  \"position\": 0\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Morning Vibes\",\n  \"track_count\": 1,\n  \"tracks\": [\n    { \"id\": 1, \"title\": \"So What\", \"artist\": \"Miles Davis\" }\n  ]\n}"
+            },
+            {
+              "name": "400 Already in playlist",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"detail\": \"Track is already in this playlist.\"\n}"
+            }
+          ]
+        },
+
+        {
+          "name": "Remove Track from Playlist",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access}}" }],
+            "url": { "raw": "{{base_url}}/playlists/1/tracks/1/remove/", "host": ["{{base_url}}"], "path": ["playlists", "1", "tracks", "1", "remove", ""] }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Morning Vibes\",\n  \"track_count\": 0,\n  \"tracks\": []\n}"
+            }
+          ]
+        }
+
+      ]
+    }
+
+  ]
+}
