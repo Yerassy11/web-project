@@ -1,2 +1,0 @@
-# web-project
-Music platform
