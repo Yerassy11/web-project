@@ -1,37 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Syne:wght@500;700;800&display=swap');
-
 :root {
-  --bg-base: #f6efe6;
-  --bg-warm: #f4d9bd;
-  --bg-cool: #d6edf1;
-  --ink-strong: #1d2a33;
-  --ink-muted: #53606a;
-  --accent-strong: #e06a4e;
-  --accent-deep: #274871;
-  --font-body: 'Manrope', 'Segoe UI', sans-serif;
-  --font-display: 'Syne', 'Trebuchet MS', sans-serif;
+  color-scheme: dark;
+  --bg: #050816;
+  --surface: #0f1835;
+  --surface-2: #121f46;
+  --text: #e7edff;
+  --muted: #a9b3d6;
+  --accent: #7a87ff;
+  --accent-2: #ff6db2;
 }
 
-*,
-*::before,
-*::after {
+* {
   box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
-  font-family: var(--font-body);
-  color: var(--ink-strong);
+  font-family: Inter, 'Segoe UI', sans-serif;
+  color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(244, 217, 189, 0.9), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(214, 237, 241, 0.92), transparent 30%),
-    linear-gradient(180deg, #fffaf2 0%, var(--bg-base) 56%, #f7efe7 100%);
+    radial-gradient(circle at top left, rgba(122, 135, 255, 0.2), transparent 35%),
+    radial-gradient(circle at right, rgba(255, 109, 178, 0.15), transparent 35%),
+    var(--bg);
 }
 
 a {
@@ -39,7 +29,89 @@ a {
   text-decoration: none;
 }
 
-button,
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(140deg, var(--surface), var(--surface-2));
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  color: var(--accent-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12rem;
+  font-size: 0.75rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  color: #fff;
+}
+
+.btn-primary {
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+}
+
 input {
-  font: inherit;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  padding: 0.6rem 0.7rem;
+}
+
+.status {
+  color: #ffd5e8;
+}
+
+audio {
+  width: 100%;
 }
