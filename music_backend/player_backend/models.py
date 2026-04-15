@@ -18,5 +18,9 @@ class PlayerState(models.Model):
 
 class QueueItem(models.Model):
     player = models.ForeignKey(PlayerState, on_delete=models.CASCADE, related_name="queue")
-    song = models.ForeignKey("music.Song", on_delete=models.CASCADE)
+    song = models.ForeignKey(Song, on_delete=models.CASCADE)
+
     order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["order"]
