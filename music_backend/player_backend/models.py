@@ -14,3 +14,9 @@ class PlayerState(models.Model):
 
     def __str__(self):
         return f"{self.user} player"
+
+
+class QueueItem(models.Model):
+    player = models.ForeignKey(PlayerState, on_delete=models.CASCADE, related_name="queue")
+    song = models.ForeignKey("music.Song", on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()
