@@ -6,7 +6,9 @@
       <a routerLink="/tracks" routerLinkActive="active">Tracks</a>
       <a routerLink="/playlists" routerLinkActive="active">Playlists</a>
       <a routerLink="/profile" routerLinkActive="active">Profile</a>
-      <a routerLink="/auth" routerLinkActive="active">Auth</a>
+      @if (!api.isAuthenticated) {
+        <a routerLink="/auth" routerLinkActive="active">Auth</a>
+      }
     </nav>
     <button class="btn btn-ghost" type="button" (click)="logout()" [disabled]="!api.isAuthenticated">
       Logout
