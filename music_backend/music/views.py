@@ -106,6 +106,7 @@ class AlbumDetailView(APIView):
 #  TRACK  (FBV — full CRUD, requirements
 
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def track_list_create(request):
     """

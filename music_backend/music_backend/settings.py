@@ -64,16 +64,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'music_backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='music_db'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='postgres'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+DB_ENGINE = config('DB_ENGINE', default='sqlite')
+
+if DB_ENGINE == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='music_db'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Auth
 AUTH_USER_MODEL = 'users.User'
@@ -124,7 +134,7 @@ SIMPLE_JWT = {
 # ─── CORS (for Angular dev server) ───────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:4200',
+    default='http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201',
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
