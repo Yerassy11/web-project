@@ -1,0 +1,18 @@
+
+DEFAULT_VOLUME = 70
+
+MAX_QUEUE_SIZE = 100
+
+ALLOW_REPEAT = True
+
+ALLOW_SHUFFLE = True
+
+AUTO_PLAY_NEXT = True
+
+SUPPORTED_FORMATS = [
+    ".mp3",
+    ".wav",
+    ".ogg"
+]
+
+DEFAULT_CROSSFADE_SECONDS = 0
