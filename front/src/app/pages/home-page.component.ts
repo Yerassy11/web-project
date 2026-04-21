@@ -9,7 +9,7 @@ interface FallingTrackCard {
   left: string;
   delay: string;
   duration: string;
-  gradient: string;
+  color: string;
 }
 
 interface GenreItem {
@@ -35,7 +35,7 @@ interface ArtistItem {
             [style.left]="item.left"
             [style.animation-delay]="item.delay"
             [style.animation-duration]="item.duration"
-            [style.background]="item.gradient"
+            [style.background]="item.color"
           >
             <p>{{ item.title }}</p>
             <span>{{ item.artist }}</span>
@@ -51,7 +51,7 @@ interface ArtistItem {
           taste profile before signing up.
         </p>
         <div class="cta-row">
-          <a routerLink="/tracks" class="btn btn-ghost">Explore Tracks</a>
+          <a routerLink="/favsongs" class="btn btn-ghost">Explore Favorite Songs</a>
           <a routerLink="/playlists" class="btn btn-ghost">View Playlists</a>
         </div>
       </div>
@@ -287,7 +287,7 @@ interface ArtistItem {
       }
 
       .artist-card.selected {
-        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        background: var(--accent);
         border-color: transparent;
       }
 
@@ -376,7 +376,7 @@ export class HomePageComponent {
       left: '6%',
       delay: '0s',
       duration: '10s',
-      gradient: 'linear-gradient(140deg, rgba(77,95,255,0.75), rgba(127,54,211,0.72))'
+      color: 'rgba(77,95,255,0.75)'
     },
     {
       title: 'Blue Lights',
@@ -385,7 +385,7 @@ export class HomePageComponent {
       left: '25%',
       delay: '2.2s',
       duration: '11s',
-      gradient: 'linear-gradient(140deg, rgba(50,183,255,0.72), rgba(64,93,255,0.72))'
+      color: 'rgba(50,183,255,0.72)'
     },
     {
       title: 'Focus Bloom',
@@ -394,7 +394,7 @@ export class HomePageComponent {
       left: '44%',
       delay: '4.5s',
       duration: '12s',
-      gradient: 'linear-gradient(140deg, rgba(73,214,172,0.72), rgba(55,124,199,0.72))'
+      color: 'rgba(73,214,172,0.72)'
     },
     {
       title: 'After Midnight',
@@ -403,7 +403,7 @@ export class HomePageComponent {
       left: '63%',
       delay: '1.3s',
       duration: '10.5s',
-      gradient: 'linear-gradient(140deg, rgba(255,118,171,0.74), rgba(131,87,255,0.72))'
+      color: 'rgba(255,118,171,0.74)'
     },
     {
       title: 'Gym Pulse',
@@ -412,7 +412,7 @@ export class HomePageComponent {
       left: '80%',
       delay: '3.5s',
       duration: '9.8s',
-      gradient: 'linear-gradient(140deg, rgba(255,102,153,0.75), rgba(255,75,75,0.7))'
+      color: 'rgba(255,102,153,0.75)'
     }
   ];
 

@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from music.serializers import TrackSerializer
+from music.serializers import FavoriteSongSerializer
 from .models import Playlist, PlaylistTrack
 
 
 class PlaylistSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
-    tracks         = TrackSerializer(many=True, read_only=True)
+    tracks         = FavoriteSongSerializer(many=True, read_only=True)
     track_count    = serializers.IntegerField(source='tracks.count', read_only=True)
 
     class Meta:
@@ -29,12 +29,6 @@ class PlaylistWriteSerializer(serializers.ModelSerializer):
 
 
 class AddTrackSerializer(serializers.Serializer):
-    """Plain Serializer to validate adding a track to a playlist."""
-    track_id = serializers.IntegerField()
+    """Plain Serializer to validate adding a song to a playlist by title."""
+    song_title = serializers.CharField(max_length=200)
     position = serializers.IntegerField(min_value=0, required=False, default=0)
-
-    def validate_track_id(self, value):
-        from music.models import Track
-        if not Track.objects.filter(pk=value).exists():
-            raise serializers.ValidationError('Track not found.')
-        return value

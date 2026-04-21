@@ -1,39 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { Playlist } from '../core/api.models';
 
 @Component({
   selector: 'app-playlists-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <section class="card endpoint-card">
-      <h2>Playlists Endpoint</h2>
-      <p class="muted">GET /api/v1/playlists/ · POST /api/v1/playlists/</p>
-
-      <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
-        <h3>Create Playlist</h3>
-        <label>Name <input type="text" formControlName="name" /></label>
-        <label>Description <input type="text" formControlName="description" /></label>
-        <label class="inline-checkbox">
-          <input type="checkbox" formControlName="is_public" />
-          Public playlist
-        </label>
-        <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
-          {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
-        </button>
-      </form>
-
-      <form [formGroup]="addTrackForm" (ngSubmit)="addTrackToPlaylist()" class="create-form">
-        <h3>Add Track To Playlist</h3>
-        <label>Playlist ID <input type="number" formControlName="playlist_id" /></label>
-        <label>Track ID <input type="number" formControlName="track_id" /></label>
-        <button class="btn btn-ghost" type="submit" [disabled]="addTrackForm.invalid || addingTrack()">
-          {{ addingTrack() ? 'Adding...' : 'Add track' }}
-        </button>
-      </form>
+      <h2>Playlists</h2>
 
       @if (statusMessage()) {
         <p class="status">{{ statusMessage() }}</p>
@@ -42,17 +20,35 @@ import { Playlist } from '../core/api.models';
         <p class="status">{{ error() }}</p>
       }
 
-      <div class="grid">
-        @for (playlist of playlists(); track playlist.id) {
-          <article class="card playlist-item">
-            <h3>{{ playlist.name }}</h3>
-            <p class="muted">{{ playlist.description || 'No description' }}</p>
-            <p><strong>ID:</strong> {{ playlist.id }}</p>
-            <p><strong>Owner:</strong> {{ playlist.owner_username }}</p>
-            <p><strong>Tracks:</strong> {{ playlist.track_count }}</p>
-            <p><strong>Visibility:</strong> {{ playlist.is_public ? 'Public' : 'Private' }}</p>
-          </article>
-        }
+      <div class="playlists-layout">
+        <div class="playlists-column">
+          <h3>Added Playlists</h3>
+          <div class="cards-grid">
+            @for (playlist of playlists(); track playlist.id) {
+              <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
+                <h4>{{ playlist.name }}</h4>
+                <p class="muted">{{ playlist.description || 'No description' }}</p>
+                <p><strong>Tracks:</strong> {{ playlist.track_count }}</p>
+                <p><strong>Visibility:</strong> {{ playlist.is_public ? 'Public' : 'Private' }}</p>
+              </a>
+            }
+          </div>
+        </div>
+
+        <aside class="create-column">
+          <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
+            <h3>Create Playlist</h3>
+            <label>Name <input type="text" formControlName="name" /></label>
+            <label>Description <input type="text" formControlName="description" /></label>
+            <label class="inline-checkbox">
+              <input type="checkbox" formControlName="is_public" />
+              Public playlist
+            </label>
+            <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
+              {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
+            </button>
+          </form>
+        </aside>
       </div>
     </section>
   `,
@@ -63,6 +59,59 @@ import { Playlist } from '../core/api.models';
         gap: 1rem;
       }
 
+      .playlists-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 1rem;
+        align-items: start;
+      }
+
+      .playlists-column {
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .playlist-item {
+        display: grid;
+        gap: 0.6rem;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        padding: 1.2rem;
+        min-height: 220px;
+        align-content: start;
+        border-radius: 18px;
+        border: 1px solid rgba(122, 135, 255, 0.28);
+        background: rgba(122, 135, 255, 0.06);
+      }
+
+      .playlist-item:hover {
+        transform: translateY(-4px);
+        border-color: rgba(122, 135, 255, 0.8);
+        box-shadow: 0 16px 28px rgba(0, 0, 0, 0.3);
+      }
+
+      .playlist-item h4 {
+        margin: 0;
+        font-size: clamp(1.55rem, 2.6vw, 2rem);
+        line-height: 1.08;
+        letter-spacing: 0.01em;
+      }
+
+      .playlist-item p {
+        font-size: 1.08rem;
+      }
+
+      .create-column {
+        width: 100%;
+      }
+
       .create-form {
         display: grid;
         gap: 0.6rem;
@@ -70,12 +119,24 @@ import { Playlist } from '../core/api.models';
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         background: rgba(0, 0, 0, 0.18);
+        position: sticky;
+        top: 0.8rem;
       }
 
       .inline-checkbox {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+      }
+
+      @media (max-width: 980px) {
+        .playlists-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .cards-grid {
+          grid-template-columns: 1fr;
+        }
       }
     `
   ]
@@ -85,21 +146,13 @@ export class PlaylistsPageComponent implements OnInit {
   readonly error = signal('');
   readonly statusMessage = signal('');
   readonly creatingPlaylist = signal(false);
-  readonly addingTrack = signal(false);
-  readonly myPlaylists = computed(() => this.playlists().filter((playlist) => !playlist.is_public || this.api.isAuthenticated));
   readonly playlistForm;
-  readonly addTrackForm;
 
   constructor(private readonly api: ApiService, private readonly fb: FormBuilder) {
     this.playlistForm = this.fb.nonNullable.group({
       name: ['', [Validators.required]],
       description: [''],
       is_public: [true]
-    });
-
-    this.addTrackForm = this.fb.nonNullable.group({
-      playlist_id: [0, [Validators.required, Validators.min(1)]],
-      track_id: [0, [Validators.required, Validators.min(1)]]
     });
   }
 
@@ -126,31 +179,6 @@ export class PlaylistsPageComponent implements OnInit {
         next: (playlist) => {
           this.statusMessage.set(`Playlist "${playlist.name}" created.`);
           this.playlistForm.reset({ name: '', description: '', is_public: true });
-          this.loadPlaylists();
-        },
-        error: (error: HttpErrorResponse) => this.statusMessage.set(this.extractError(error))
-      });
-  }
-
-  addTrackToPlaylist(): void {
-    if (!this.api.isAuthenticated) {
-      this.statusMessage.set('Login is required to modify playlist.');
-      return;
-    }
-    if (this.addTrackForm.invalid) {
-      this.statusMessage.set('Provide valid playlist ID and track ID.');
-      return;
-    }
-
-    const { playlist_id, track_id } = this.addTrackForm.getRawValue();
-    this.addingTrack.set(true);
-    this.statusMessage.set('');
-    this.api
-      .addTrackToPlaylist(playlist_id, track_id, 0)
-      .pipe(finalize(() => this.addingTrack.set(false)))
-      .subscribe({
-        next: (playlist) => {
-          this.statusMessage.set(`Track added to playlist "${playlist.name}".`);
           this.loadPlaylists();
         },
         error: (error: HttpErrorResponse) => this.statusMessage.set(this.extractError(error))

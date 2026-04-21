@@ -6,5 +6,5 @@ urlpatterns = [
     path('<int:pk>/', views.PlaylistDetailView.as_view(),     name='playlist-detail'),
 
     path('<int:pk>/tracks/add/',                    views.playlist_add_track,    name='playlist-add-track'),
-    path('<int:pk>/tracks/<int:track_pk>/remove/',  views.playlist_remove_track, name='playlist-remove-track'),
+    path('<int:pk>/tracks/<str:song_title>/remove/', views.playlist_remove_track, name='playlist-remove-track'),
 ]

@@ -5,6 +5,8 @@ export interface UserProfile {
   avatar: string | null;
   bio: string;
   created_at: string;
+  playlist_count: number;
+  frequent_songs: string[];
 }
 
 export interface TokenPair {
@@ -17,28 +19,12 @@ export interface AuthResponse {
   tokens: TokenPair;
 }
 
-export interface Album {
-  id: number;
-  title: string;
-  artist: string;
-  cover_image: string | null;
-  release_year: number;
-  uploaded_by: number;
-  uploaded_by_username: string;
-  track_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Track {
-  id: number;
   title: string;
   artist: string;
   audio_file: string;
   duration: number;
   genre: string;
-  album: number | null;
-  album_title: string | null;
   uploaded_by: number;
   uploaded_by_username: string;
   created_at: string;

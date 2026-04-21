@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Count
+from playlists.models import PlaylistTrack
 
 User = get_user_model()
 
@@ -45,11 +47,35 @@ class LoginSerializer(serializers.Serializer):
 # ── serializers.ModelSerializer (requirement) ─────────────────────────────────
 class UserSerializer(serializers.ModelSerializer):
     """Public profile — read-only representation."""
+    playlist_count = serializers.SerializerMethodField()
+    frequent_songs = serializers.SerializerMethodField()
 
     class Meta:
         model  = User
-        fields = ['id', 'email', 'username', 'avatar', 'bio', 'created_at']
+        fields = [
+            'id',
+            'email',
+            'username',
+            'avatar',
+            'bio',
+            'created_at',
+            'playlist_count',
+            'frequent_songs',
+        ]
         read_only_fields = ['id', 'created_at']
+
+    def get_playlist_count(self, obj):
+        return obj.playlists.count()
+
+    def get_frequent_songs(self, obj):
+        top_tracks = (
+            PlaylistTrack.objects
+            .filter(playlist__owner=obj)
+            .values('track__title')
+            .annotate(play_count=Count('track'))
+            .order_by('-play_count', 'track__title')[:5]
+        )
+        return [item['track__title'] for item in top_tracks if item['track__title']]
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

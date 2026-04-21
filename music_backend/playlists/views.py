@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -95,7 +98,7 @@ class PlaylistDetailView(APIView):
 def playlist_add_track(request, pk):
     """
     POST /api/v1/playlists/<id>/tracks/add/
-    Body: { "track_id": 5, "position": 0 }
+    Body: { "song_title": "Night Transit", "position": 0 }
     """
     try:
         playlist = Playlist.objects.get(pk=pk, owner=request.user)
@@ -105,7 +108,33 @@ def playlist_add_track(request, pk):
     serializer = AddTrackSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    track    = Track.objects.get(pk=serializer.validated_data['track_id'])
+    song_title = serializer.validated_data['song_title'].strip()
+    track = Track.objects.filter(title=song_title).first()
+    if track is None:
+        # Fallback: if song exists in media directory but not in DB, create track record.
+        media_root = Path(settings.MEDIA_ROOT)
+        audio_exts = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
+        matched_file = None
+        for candidate in media_root.rglob('*'):
+            if not candidate.is_file() or candidate.suffix.lower() not in audio_exts:
+                continue
+            if candidate.stem == song_title:
+                matched_file = candidate
+                break
+
+        if matched_file is None:
+            return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
+
+        relative_audio_path = matched_file.relative_to(media_root).as_posix()
+        track = Track.objects.create(
+            title=song_title,
+            artist='Unknown Artist',
+            audio_file=relative_audio_path,
+            duration=0,
+            genre='',
+            uploaded_by=request.user,
+        )
+
     position = serializer.validated_data['position']
 
     pt, created = PlaylistTrack.objects.get_or_create(
@@ -114,7 +143,7 @@ def playlist_add_track(request, pk):
         defaults={'position': position},
     )
     if not created:
-        return Response({'detail': 'Track is already in this playlist.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'Song is already in this playlist.'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(PlaylistSerializer(playlist, context={'request': request}).data,
                     status=status.HTTP_201_CREATED)
@@ -122,17 +151,17 @@ def playlist_add_track(request, pk):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def playlist_remove_track(request, pk, track_pk):
+def playlist_remove_track(request, pk, song_title):
     """
-    DELETE /api/v1/playlists/<id>/tracks/<track_id>/remove/
+    DELETE /api/v1/playlists/<id>/tracks/<song_title>/remove/
     """
     try:
         playlist = Playlist.objects.get(pk=pk, owner=request.user)
     except Playlist.DoesNotExist:
         return Response({'detail': 'Playlist not found or not yours.'}, status=status.HTTP_404_NOT_FOUND)
 
-    deleted, _ = PlaylistTrack.objects.filter(playlist=playlist, track_id=track_pk).delete()
+    deleted, _ = PlaylistTrack.objects.filter(playlist=playlist, track__title=song_title).delete()
     if not deleted:
-        return Response({'detail': 'Track not in playlist.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'detail': 'Song not in playlist.'}, status=status.HTTP_404_NOT_FOUND)
 
     return Response(PlaylistSerializer(playlist, context={'request': request}).data)

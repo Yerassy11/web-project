@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Album, AuthResponse, Playlist, Track, UserProfile } from './api.models';
+import { AuthResponse, Playlist, Track, UserProfile } from './api.models';
 
 interface LoginPayload {
   email: string;
@@ -13,12 +13,6 @@ interface RegisterPayload {
   username: string;
   password: string;
   password2: string;
-}
-
-interface AlbumPayload {
-  title: string;
-  artist: string;
-  release_year: number;
 }
 
 interface PlaylistPayload {
@@ -59,12 +53,16 @@ export class ApiService {
     return this.http.get<UserProfile>(`${this.baseUrl}/auth/me/`, { headers: this.authHeaders() });
   }
 
-  tracks(): Observable<Track[]> {
-    return this.http.get<Track[]>(`${this.baseUrl}/music/tracks/`);
+  updateMe(payload: FormData | Partial<Pick<UserProfile, 'username' | 'bio'>>): Observable<UserProfile> {
+    return this.http.patch<UserProfile>(`${this.baseUrl}/auth/me/`, payload, { headers: this.authHeaders() });
   }
 
-  albums(): Observable<Album[]> {
-    return this.http.get<Album[]>(`${this.baseUrl}/music/albums/`);
+  favoriteSongs(): Observable<Track[]> {
+    return this.http.get<Track[]>(`${this.baseUrl}/music/favsongs/`, { headers: this.authHeaders() });
+  }
+
+  librarySongs(): Observable<Track[]> {
+    return this.http.get<Track[]>(`${this.baseUrl}/music/library-songs/`);
   }
 
   playlists(): Observable<Playlist[]> {
@@ -72,20 +70,35 @@ export class ApiService {
     return this.http.get<Playlist[]>(`${this.baseUrl}/playlists/`, { headers });
   }
 
-  createAlbum(payload: AlbumPayload): Observable<Album> {
-    return this.http.post<Album>(`${this.baseUrl}/music/albums/`, payload, { headers: this.authHeaders() });
+  getPlaylist(id: number): Observable<Playlist> {
+    const headers = this.accessToken ? this.authHeaders() : undefined;
+    return this.http.get<Playlist>(`${this.baseUrl}/playlists/${id}/`, { headers });
   }
 
   createPlaylist(payload: PlaylistPayload): Observable<Playlist> {
     return this.http.post<Playlist>(`${this.baseUrl}/playlists/`, payload, { headers: this.authHeaders() });
   }
 
-  addTrackToPlaylist(playlistId: number, trackId: number, position = 0): Observable<Playlist> {
+  addTrackToPlaylist(playlistId: number, songTitle: string, position = 0): Observable<Playlist> {
     return this.http.post<Playlist>(
       `${this.baseUrl}/playlists/${playlistId}/tracks/add/`,
-      { track_id: trackId, position },
+      { song_title: songTitle, position },
       { headers: this.authHeaders() }
     );
+  }
+
+  likeSong(songTitle: string): Observable<Track> {
+    return this.http.post<Track>(
+      `${this.baseUrl}/music/favsongs/`,
+      { song_title: songTitle },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  unlikeSong(songTitle: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/music/favsongs/${encodeURIComponent(songTitle)}/`, {
+      headers: this.authHeaders()
+    });
   }
 
   saveTokens(tokens: { access: string; refresh: string }): void {

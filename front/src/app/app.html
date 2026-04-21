@@ -3,7 +3,7 @@
     <a class="logo" routerLink="/">{{ title }}</a>
     <nav>
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      <a routerLink="/tracks" routerLinkActive="active">Tracks</a>
+      <a routerLink="/favsongs" routerLinkActive="active">Favorite Songs</a>
       <a routerLink="/playlists" routerLinkActive="active">Playlists</a>
       <a routerLink="/profile" routerLinkActive="active">Profile</a>
       @if (!api.isAuthenticated) {

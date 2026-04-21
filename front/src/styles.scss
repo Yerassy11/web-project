@@ -18,10 +18,7 @@ body {
   min-height: 100vh;
   font-family: Inter, 'Segoe UI', sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(122, 135, 255, 0.2), transparent 35%),
-    radial-gradient(circle at right, rgba(255, 109, 178, 0.15), transparent 35%),
-    var(--bg);
+  background: var(--bg);
 }
 
 a {
@@ -46,7 +43,7 @@ p {
   padding: 1rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(140deg, var(--surface), var(--surface-2));
+  background: var(--surface);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
 }
 
@@ -83,7 +80,7 @@ p {
 }
 
 .btn-primary {
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  background: var(--accent);
 }
 
 .btn-ghost {

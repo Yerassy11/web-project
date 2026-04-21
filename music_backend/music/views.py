@@ -3,165 +3,133 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.conf import settings
+from pathlib import Path
 
-from .models import Album, Track
+from .models import Track, FavoriteSong
 from .serializers import (
-    AlbumCreateSerializer,
-    AlbumSerializer,
-    TrackUploadSerializer,
-    TrackSerializer,
+    FavoriteSongSerializer,
+    FavoriteSongActionSerializer,
 )
 
 
-
-
-class AlbumListCreateView(APIView):
-    """
-    GET  /api/v1/music/albums/  → list all albums
-    POST /api/v1/music/albums/  → create album (linked to request.user)
-    """
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
-
-    def get(self, request):
-        albums = Album.objects.select_related('uploaded_by').prefetch_related('tracks').all()
-        serializer = AlbumSerializer(albums, many=True, context={'request': request})
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = AlbumCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # Link to authenticated user (requirement)
-        album = serializer.save(uploaded_by=request.user)
-        return Response(AlbumSerializer(album, context={'request': request}).data,
-                        status=status.HTTP_201_CREATED)
-
-
-class AlbumDetailView(APIView):
-    """
-    GET    /api/v1/music/albums/<id>/  → retrieve album
-    PUT    /api/v1/music/albums/<id>/  → full update (owner only)
-    PATCH  /api/v1/music/albums/<id>/  → partial update (owner only)
-    DELETE /api/v1/music/albums/<id>/  → delete (owner only)
-    """
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
-
-    def _get_album(self, pk, user=None):
-        try:
-            album = Album.objects.get(pk=pk)
-        except Album.DoesNotExist:
-            return None, Response({'detail': 'Album not found.'}, status=status.HTTP_404_NOT_FOUND)
-        if user and album.uploaded_by != user:
-            return None, Response({'detail': 'You do not have permission to modify this album.'},
-                                  status=status.HTTP_403_FORBIDDEN)
-        return album, None
-
-    def get(self, request, pk):
-        album, err = self._get_album(pk)
-        if err:
-            return err
-        return Response(AlbumSerializer(album, context={'request': request}).data)
-
-    def put(self, request, pk):
-        album, err = self._get_album(pk, request.user)
-        if err:
-            return err
-        serializer = AlbumCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        for attr, val in serializer.validated_data.items():
-            setattr(album, attr, val)
-        album.save()
-        return Response(AlbumSerializer(album, context={'request': request}).data)
-
-    def patch(self, request, pk):
-        album, err = self._get_album(pk, request.user)
-        if err:
-            return err
-        serializer = AlbumCreateSerializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        for attr, val in serializer.validated_data.items():
-            setattr(album, attr, val)
-        album.save()
-        return Response(AlbumSerializer(album, context={'request': request}).data)
-
-    def delete(self, request, pk):
-        album, err = self._get_album(pk, request.user)
-        if err:
-            return err
-        album.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
-#  TRACK  (FBV — full CRUD, requirements
+#  FAVORITE SONGS (FBV — full CRUD, title-based detail)
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
-def track_list_create(request):
+def favsong_list_create(request):
     """
-    GET  /api/v1/music/tracks/  → list all tracks (public)
-    POST /api/v1/music/tracks/  → upload track (auth required, linked to user)
+    GET  /api/v1/music/favsongs/  → list current user's favorite songs
+    POST /api/v1/music/favsongs/  → like song by title
     """
     if request.method == 'GET':
-        tracks = Track.objects.select_related('uploaded_by', 'album').all()
-        serializer = TrackSerializer(tracks, many=True, context={'request': request})
+        tracks = Track.objects.filter(favorite_entries__user=request.user).select_related('uploaded_by').distinct()
+        serializer = FavoriteSongSerializer(tracks, many=True, context={'request': request})
         return Response(serializer.data)
 
-    # POST — requires auth
-    if not request.user.is_authenticated:
-        return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+    action = FavoriteSongActionSerializer(data=request.data)
+    action.is_valid(raise_exception=True)
+    song_title = action.validated_data['song_title']
+    track = _get_or_create_track_from_library(song_title, request.user)
+    if track is None:
+        return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = TrackUploadSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    # Link to authenticated user (requirement)
-    track = serializer.save(uploaded_by=request.user)
-    return Response(TrackSerializer(track, context={'request': request}).data,
+    FavoriteSong.objects.get_or_create(user=request.user, track=track)
+    return Response(FavoriteSongSerializer(track, context={'request': request}).data,
                     status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
-def track_detail(request, pk):
+def favsong_detail(request, title):
     """
-    GET    /api/v1/music/tracks/<id>/  → retrieve track (auth required)
-    PUT    /api/v1/music/tracks/<id>/  → full update (owner only)
-    PATCH  /api/v1/music/tracks/<id>/  → partial update (owner only)
-    DELETE /api/v1/music/tracks/<id>/  → delete (owner only)
+    GET    /api/v1/music/favsongs/<title>/  → retrieve user's favorite song
+    DELETE /api/v1/music/favsongs/<title>/  → unlike song
     """
-    try:
-        track = Track.objects.get(pk=pk)
-    except Track.DoesNotExist:
-        return Response({'detail': 'Track not found.'}, status=status.HTTP_404_NOT_FOUND)
+    track = Track.objects.filter(title=title, favorite_entries__user=request.user).select_related('uploaded_by').first()
+    if track is None:
+        return Response({'detail': 'Favorite song not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        return Response(TrackSerializer(track, context={'request': request}).data)
-
-    # Mutation — owner only
-    if track.uploaded_by != request.user:
-        return Response({'detail': 'You do not have permission to modify this track.'},
-                        status=status.HTTP_403_FORBIDDEN)
+        return Response(FavoriteSongSerializer(track, context={'request': request}).data)
 
     if request.method in ['PUT', 'PATCH']:
-        partial = request.method == 'PATCH'
-        serializer = TrackUploadSerializer(data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        for attr, val in serializer.validated_data.items():
-            setattr(track, attr, val)
-        track.save()
-        return Response(TrackSerializer(track, context={'request': request}).data)
+        return Response({'detail': 'Method not allowed.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     if request.method == 'DELETE':
-        track.delete()
+        FavoriteSong.objects.filter(user=request.user, track=track).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def library_songs(request):
+    """
+    GET /api/v1/music/library-songs/ → songs from media directory (DB + raw media files)
+    """
+    tracks = Track.objects.select_related('uploaded_by').all()
+    serializer = FavoriteSongSerializer(tracks, many=True, context={'request': request})
+    by_title = {item['title']: item for item in serializer.data}
+
+    media_root = Path(settings.MEDIA_ROOT)
+    media_url = settings.MEDIA_URL.rstrip('/')
+    audio_exts = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
+
+    for candidate in media_root.rglob('*'):
+        if not candidate.is_file() or candidate.suffix.lower() not in audio_exts:
+            continue
+
+        title = candidate.stem
+        if title in by_title:
+            continue
+
+        rel = candidate.relative_to(media_root).as_posix()
+        by_title[title] = {
+            'title': title,
+            'artist': 'Unknown Artist',
+            'audio_file': f'{media_url}/{rel}',
+            'duration': 0,
+            'genre': '',
+            'uploaded_by': 0,
+            'uploaded_by_username': 'media-library',
+            'created_at': '',
+            'updated_at': '',
+        }
+
+    return Response(sorted(by_title.values(), key=lambda item: item['title'].lower()))
+
+
+def _get_or_create_track_from_library(song_title, user):
+    title = song_title.strip()
+    if not title:
+        return None
+
+    track = Track.objects.filter(title=title).first()
+    if track is not None:
+        return track
+
+    media_root = Path(settings.MEDIA_ROOT)
+    audio_exts = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
+    matched_file = None
+    for candidate in media_root.rglob('*'):
+        if not candidate.is_file() or candidate.suffix.lower() not in audio_exts:
+            continue
+        if candidate.stem == title:
+            matched_file = candidate
+            break
+
+    if matched_file is None:
+        return None
+
+    relative_audio_path = matched_file.relative_to(media_root).as_posix()
+    return Track.objects.create(
+        title=title,
+        artist='Unknown Artist',
+        audio_file=relative_audio_path,
+        duration=0,
+        genre='',
+        uploaded_by=user,
+    )
