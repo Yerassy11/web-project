@@ -30,14 +30,23 @@ import { Playlist } from '../core/api.models';
 
         <div class="playlists-layout">
           <div class="playlists-column">
-            <h3>Added Playlists</h3>
+            <h3>Playlists</h3>
             <div class="cards-grid">
               @for (playlist of playlists(); track playlist.id) {
                 <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
-                  <h4>{{ playlist.name }}</h4>
-                  <p class="muted">{{ playlist.description || 'No description' }}</p>
-                  <p><strong>Tracks:</strong> {{ playlist.track_count }}</p>
-                  <p><strong>Visibility:</strong> {{ playlist.is_public ? 'Public' : 'Private' }}</p>
+                  <div class="playlist-cover">
+                    @if (coverFor(playlist); as cover) {
+                      <img [src]="cover" [alt]="playlist.name + ' cover'" />
+                    } @else {
+                      <div class="playlist-cover-fallback">🎵</div>
+                    }
+                  </div>
+
+                  <div class="playlist-content">
+                    <h4>{{ playlist.name }}</h4>
+                    <p class="muted description">{{ playlist.description || 'No description' }}</p>
+                    <p class="meta-line">{{ playlist.track_count }} tracks • {{ playlist.is_public ? 'Public' : 'Private' }}</p>
+                  </div>
                 </a>
               }
             </div>
@@ -65,7 +74,9 @@ import { Playlist } from '../core/api.models';
     `
       .endpoint-card {
         display: grid;
-        gap: 1rem;
+        gap: 24px;
+        padding: 24px;
+        border-radius: 24px;
       }
 
       .auth-warning {
@@ -84,50 +95,94 @@ import { Playlist } from '../core/api.models';
       .playlists-layout {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-        gap: 1rem;
+        gap: 24px;
         align-items: start;
       }
 
       .playlists-column {
         display: grid;
-        gap: 0.8rem;
+        gap: 16px;
       }
 
       .cards-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
+        gap: 20px;
       }
 
       .playlist-item {
         display: grid;
-        gap: 0.6rem;
+        grid-template-columns: 88px 1fr;
+        gap: 14px;
         text-decoration: none;
         color: inherit;
-        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
-        padding: 1.2rem;
-        min-height: 220px;
-        align-content: start;
-        border-radius: 18px;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        padding: 18px;
+        min-height: 170px;
+        align-items: start;
+        border-radius: 20px;
         border: 1px solid rgba(122, 135, 255, 0.28);
-        background: rgba(122, 135, 255, 0.06);
+        background: rgba(122, 135, 255, 0.08);
       }
 
       .playlist-item:hover {
         transform: translateY(-4px);
-        border-color: rgba(122, 135, 255, 0.8);
-        box-shadow: 0 16px 28px rgba(0, 0, 0, 0.3);
+        border-color: rgba(122, 135, 255, 0.65);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+        background: rgba(122, 135, 255, 0.12);
+      }
+
+      .playlist-cover {
+        width: 88px;
+        height: 88px;
+      }
+
+      .playlist-cover img,
+      .playlist-cover-fallback {
+        width: 100%;
+        height: 100%;
+        border-radius: 14px;
+      }
+
+      .playlist-cover img {
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .playlist-cover-fallback {
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .playlist-content {
+        display: grid;
+        gap: 8px;
+        align-content: start;
       }
 
       .playlist-item h4 {
         margin: 0;
-        font-size: clamp(1.55rem, 2.6vw, 2rem);
-        line-height: 1.08;
+        font-size: clamp(1.35rem, 2.3vw, 1.7rem);
+        line-height: 1.12;
         letter-spacing: 0.01em;
       }
 
-      .playlist-item p {
-        font-size: 1.08rem;
+      .description {
+        margin: 0;
+        font-size: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .meta-line {
+        margin: 0;
+        font-size: 0.98rem;
+        color: #d4ddfb;
       }
 
       .create-column {
@@ -136,13 +191,14 @@ import { Playlist } from '../core/api.models';
 
       .create-form {
         display: grid;
-        gap: 0.6rem;
-        padding: 0.8rem;
-        border-radius: 12px;
+        gap: 12px;
+        padding: 20px;
+        border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(0, 0, 0, 0.18);
+        background: rgba(15, 24, 53, 0.9);
         position: sticky;
-        top: 0.8rem;
+        top: 20px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
       }
 
       .inline-checkbox {
@@ -158,6 +214,20 @@ import { Playlist } from '../core/api.models';
 
         .cards-grid {
           grid-template-columns: 1fr;
+        }
+
+        .playlist-item {
+          grid-template-columns: 74px 1fr;
+          min-height: 150px;
+        }
+
+        .playlist-cover {
+          width: 74px;
+          height: 74px;
+        }
+
+        .create-form {
+          position: static;
         }
       }
     `
@@ -231,5 +301,9 @@ export class PlaylistsPageComponent implements OnInit {
       }
     }
     return 'Request failed. Check backend connection.';
+  }
+
+  coverFor(playlist: Playlist): string | null {
+    return playlist.tracks.find((track) => !!track.artwork_url)?.artwork_url || null;
   }
 }

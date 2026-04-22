@@ -240,8 +240,13 @@ export class SearchPageComponent implements OnInit {
     });
 
     if (this.api.isAuthenticated) {
-      this.api.playlists().subscribe({
-        next: (data) => this.myPlaylists.set(data),
+      this.api.me().subscribe({
+        next: (me) => {
+          this.api.playlists().subscribe({
+            next: (data) => this.myPlaylists.set(data.filter((playlist) => playlist.owner === me.id)),
+            error: () => this.myPlaylists.set([])
+          });
+        },
         error: () => this.myPlaylists.set([])
       });
     }
@@ -295,7 +300,14 @@ export class SearchPageComponent implements OnInit {
           this.openedPlaylistMenuFor.set(null);
         },
         error: (error: HttpErrorResponse) => {
-          this.actionMessage.set(this.extractError(error));
+          const reason = this.extractError(error);
+          if (reason === 'Song not found in library.') {
+            this.actionMessage.set(
+              `Could not add "${song.title}". No playable preview was found for this song.`
+            );
+            return;
+          }
+          this.actionMessage.set(reason);
         }
       });
   }

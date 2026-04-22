@@ -1,5 +1,6 @@
+import json
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 from urllib.request import Request, urlopen
 
 from django.conf import settings
@@ -43,6 +44,8 @@ def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url='
 
     # 2) Fallback: download internet preview file if provided.
     preview = (preview_url or '').strip()
+    if not preview:
+        preview = _lookup_preview_url(title, artist)
     if preview:
         downloaded_path = _download_preview_to_media(title, preview)
         if downloaded_path is not None:
@@ -57,6 +60,32 @@ def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url='
             )
 
     return None
+
+
+def _lookup_preview_url(song_title, artist=''):
+    query_parts = [song_title.strip()]
+    if artist and artist.strip():
+        query_parts.append(artist.strip())
+
+    query = ' '.join(part for part in query_parts if part)
+    if len(query) < 2:
+        return ''
+
+    encoded = quote_plus(query)
+    url = f'https://itunes.apple.com/search?term={encoded}&entity=song&limit=5'
+    req = Request(url, headers={'User-Agent': 'ShumaqMusic/1.0'})
+
+    try:
+        with urlopen(req, timeout=8) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return ''
+
+    for item in payload.get('results', []):
+        preview = (item.get('previewUrl') or '').strip()
+        if preview:
+            return preview
+    return ''
 
 
 def _download_preview_to_media(song_title, preview_url):
