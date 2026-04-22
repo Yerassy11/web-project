@@ -1,3 +1,10 @@
+export interface FrequentSong {
+  title: string;
+  artist: string;
+  duration: number;
+  play_count: number;
+}
+
 export interface UserProfile {
   id: number;
   email: string;
@@ -6,7 +13,8 @@ export interface UserProfile {
   bio: string;
   created_at: string;
   playlist_count: number;
-  frequent_songs: string[];
+  favorites_count: number;
+  frequent_songs: FrequentSong[];
 }
 
 export interface TokenPair {
@@ -29,6 +37,14 @@ export interface Track {
   uploaded_by_username: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface InternetSongResult {
+  title: string;
+  artist: string;
+  preview_url: string;
+  artwork_url: string;
+  source: string;
 }
 
 export interface Playlist {

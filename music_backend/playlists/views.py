@@ -1,6 +1,3 @@
-from pathlib import Path
-
-from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -8,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from music.models import Track
+from music.track_import import get_or_create_track
 from .models import Playlist, PlaylistTrack
 from .serializers import PlaylistSerializer, PlaylistWriteSerializer, AddTrackSerializer
 
@@ -109,31 +107,11 @@ def playlist_add_track(request, pk):
     serializer.is_valid(raise_exception=True)
 
     song_title = serializer.validated_data['song_title'].strip()
-    track = Track.objects.filter(title=song_title).first()
+    artist = serializer.validated_data.get('artist', 'Unknown Artist')
+    preview_url = serializer.validated_data.get('preview_url', '')
+    track = get_or_create_track(song_title, request.user, artist=artist, preview_url=preview_url)
     if track is None:
-        # Fallback: if song exists in media directory but not in DB, create track record.
-        media_root = Path(settings.MEDIA_ROOT)
-        audio_exts = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
-        matched_file = None
-        for candidate in media_root.rglob('*'):
-            if not candidate.is_file() or candidate.suffix.lower() not in audio_exts:
-                continue
-            if candidate.stem == song_title:
-                matched_file = candidate
-                break
-
-        if matched_file is None:
-            return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
-
-        relative_audio_path = matched_file.relative_to(media_root).as_posix()
-        track = Track.objects.create(
-            title=song_title,
-            artist='Unknown Artist',
-            audio_file=relative_audio_path,
-            duration=0,
-            genre='',
-            uploaded_by=request.user,
-        )
+        return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
 
     position = serializer.validated_data['position']
 

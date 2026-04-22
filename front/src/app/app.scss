@@ -33,6 +33,20 @@ nav {
   flex-wrap: wrap;
 }
 
+.auth-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.icon-btn {
+  width: 42px;
+  padding-inline: 0;
+  text-align: center;
+  flex: 0 0 42px;
+}
+
 nav a {
   padding: 0.45rem 0.7rem;
   border-radius: 10px;
@@ -43,6 +57,35 @@ nav a.active,
 nav a:hover {
   background: rgba(108, 118, 255, 0.25);
   color: #ffffff;
+}
+
+.search-pill {
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.search-pill input {
+  width: 0;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: #e7edff;
+  padding: 0;
+  transition: width 0.28s ease, opacity 0.18s ease, padding 0.28s ease;
+}
+
+.search-pill.open input {
+  width: 220px;
+  opacity: 1;
+  padding: 0.45rem 0.6rem 0.45rem 0.2rem;
+}
+
+.search-pill input:focus {
+  outline: none;
 }
 
 main {

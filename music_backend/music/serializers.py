@@ -43,6 +43,8 @@ class FavoriteSongSerializer(serializers.ModelSerializer):
 
 class FavoriteSongActionSerializer(serializers.Serializer):
     song_title = serializers.CharField(max_length=200)
+    artist = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    preview_url = serializers.URLField(required=False, allow_blank=True)
 
     def validate_song_title(self, value):
         cleaned = value.strip()

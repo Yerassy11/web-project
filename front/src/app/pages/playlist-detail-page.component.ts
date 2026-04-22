@@ -19,6 +19,13 @@ import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordina
 
       <a routerLink="/playlists" class="back-link">← Back to playlists</a>
 
+      @if (!api.isAuthenticated) {
+        <article class="card auth-warning">
+          <h3>Упс, вы не авторизованы</h3>
+          <p class="muted">Чтобы открыть этот раздел, сначала войдите в аккаунт.</p>
+          <a class="btn btn-primary" routerLink="/auth">Login</a>
+        </article>
+      } @else {
       @if (error()) {
         <p class="status">{{ error() }}</p>
       }
@@ -109,6 +116,7 @@ import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordina
           }
         </article>
       }
+      }
     </section>
   `,
   styles: [
@@ -123,6 +131,11 @@ import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordina
         width: fit-content;
         font-weight: 600;
         color: var(--muted);
+      }
+
+      .auth-warning {
+        display: grid;
+        gap: 0.65rem;
       }
 
       .toast-notification {
@@ -269,12 +282,16 @@ export class PlaylistDetailPageComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly api: ApiService,
+    public readonly api: ApiService,
     public readonly player: PlayerService,
     private readonly audioCoordinator: AudioPlaybackCoordinatorService
   ) {}
 
   ngOnInit(): void {
+    if (!this.api.isAuthenticated) {
+      return;
+    }
+
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(id) || id <= 0) {
       this.error.set('Invalid playlist ID.');

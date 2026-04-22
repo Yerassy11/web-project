@@ -31,4 +31,6 @@ class PlaylistWriteSerializer(serializers.ModelSerializer):
 class AddTrackSerializer(serializers.Serializer):
     """Plain Serializer to validate adding a song to a playlist by title."""
     song_title = serializers.CharField(max_length=200)
+    artist = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    preview_url = serializers.URLField(required=False, allow_blank=True)
     position = serializers.IntegerField(min_value=0, required=False, default=0)

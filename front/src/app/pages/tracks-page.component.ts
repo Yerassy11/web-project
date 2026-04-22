@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { Track } from '../core/api.models';
 import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordinator.service';
@@ -7,32 +8,41 @@ import { PlayerService } from '../core/player.service';
 
 @Component({
   selector: 'app-tracks-page',
+  imports: [RouterLink],
   template: `
     <section class="card endpoint-card">
       <h2>Favorite Songs</h2>
 
-      @if (globalError()) {
-        <p class="status">{{ globalError() }}</p>
-      }
-
-      @if (!tracks().length && !globalError()) {
-        <p class="muted">No favorite songs yet. Like songs from playlists to see them here.</p>
+      @if (!api.isAuthenticated) {
+        <article class="card auth-warning">
+          <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
+          <h3>Oops, you are not authorized</h3>
+          <p class="muted">Please log in to open the Favorite Songs section.</p>
+          <a class="btn btn-primary" routerLink="/auth">Login</a>
+        </article>
       } @else {
-        <div class="tracks-list">
-          @for (track of tracks(); track track.title) {
-            <article class="card track-item">
-              <h3>{{ track.title }}</h3>
-              <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
-              <p>Duration: {{ track.duration }} sec</p>
-              <audio
-                [src]="track.audio_file"
-                controls
-                (play)="onInlineAudioPlay($event)"
-                (ended)="onInlineAudioEnded($event)"
-              ></audio>
-            </article>
-          }
-        </div>
+        @if (globalError()) {
+          <p class="status">{{ globalError() }}</p>
+        }
+
+        @if (!tracks().length && !globalError()) {
+          <p class="muted">No favorite songs yet. Like songs from playlists to see them here.</p>
+        } @else {
+          <div class="tracks-list">
+            @for (track of tracks(); track track.title) {
+              <article class="card track-item">
+                <h3>{{ track.title }}</h3>
+                <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
+                <audio
+                  [src]="track.audio_file"
+                  controls
+                  (play)="onInlineAudioPlay($event)"
+                  (ended)="onInlineAudioEnded($event)"
+                ></audio>
+              </article>
+            }
+          </div>
+        }
       }
     </section>
   `,
@@ -41,6 +51,19 @@ import { PlayerService } from '../core/player.service';
       .endpoint-card {
         display: grid;
         gap: 1rem;
+      }
+
+      .auth-warning {
+        display: grid;
+        gap: 0.65rem;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .unauthorized-image {
+        width: min(220px, 70vw);
+        height: auto;
+        display: block;
       }
 
       .tracks-list {
@@ -61,12 +84,15 @@ export class TracksPageComponent implements OnInit {
   readonly globalError = signal('');
 
   constructor(
-    private readonly api: ApiService,
+    public readonly api: ApiService,
     private readonly audioCoordinator: AudioPlaybackCoordinatorService,
     private readonly player: PlayerService
   ) {}
 
   ngOnInit(): void {
+    if (!this.api.isAuthenticated) {
+      return;
+    }
     this.loadData();
   }
 

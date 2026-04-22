@@ -5,12 +5,16 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from django.conf import settings
 from pathlib import Path
+from urllib.parse import quote_plus
+from urllib.request import urlopen, Request
+import json
 
 from .models import Track, FavoriteSong
 from .serializers import (
     FavoriteSongSerializer,
     FavoriteSongActionSerializer,
 )
+from .track_import import get_or_create_track
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -32,7 +36,9 @@ def favsong_list_create(request):
     action = FavoriteSongActionSerializer(data=request.data)
     action.is_valid(raise_exception=True)
     song_title = action.validated_data['song_title']
-    track = _get_or_create_track_from_library(song_title, request.user)
+    artist = action.validated_data.get('artist', 'Unknown Artist')
+    preview_url = action.validated_data.get('preview_url', '')
+    track = get_or_create_track(song_title, request.user, artist=artist, preview_url=preview_url)
     if track is None:
         return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -102,34 +108,41 @@ def library_songs(request):
     return Response(sorted(by_title.values(), key=lambda item: item['title'].lower()))
 
 
-def _get_or_create_track_from_library(song_title, user):
-    title = song_title.strip()
-    if not title:
-        return None
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def internet_song_search(request):
+    """
+    GET /api/v1/music/internet-search/?q=<query>
+    Search songs from internet catalog (iTunes Search API).
+    """
+    query = (request.query_params.get('q') or '').strip()
+    if len(query) < 2:
+        return Response({'results': []})
 
-    track = Track.objects.filter(title=title).first()
-    if track is not None:
-        return track
+    encoded_query = quote_plus(query)
+    url = f'https://itunes.apple.com/search?term={encoded_query}&entity=song&limit=15'
+    req = Request(url, headers={'User-Agent': 'ShumaqMusic/1.0'})
 
-    media_root = Path(settings.MEDIA_ROOT)
-    audio_exts = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
-    matched_file = None
-    for candidate in media_root.rglob('*'):
-        if not candidate.is_file() or candidate.suffix.lower() not in audio_exts:
+    try:
+        with urlopen(req, timeout=8) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return Response({'detail': 'Failed to search internet songs.'}, status=status.HTTP_502_BAD_GATEWAY)
+
+    raw_results = payload.get('results', [])
+    normalized = []
+    for item in raw_results:
+        title = item.get('trackName')
+        artist = item.get('artistName')
+        preview_url = item.get('previewUrl')
+        if not title or not artist:
             continue
-        if candidate.stem == title:
-            matched_file = candidate
-            break
+        normalized.append({
+            'title': title,
+            'artist': artist,
+            'preview_url': preview_url or '',
+            'artwork_url': item.get('artworkUrl100') or '',
+            'source': 'itunes',
+        })
 
-    if matched_file is None:
-        return None
-
-    relative_audio_path = matched_file.relative_to(media_root).as_posix()
-    return Track.objects.create(
-        title=title,
-        artist='Unknown Artist',
-        audio_file=relative_audio_path,
-        duration=0,
-        genre='',
-        uploaded_by=user,
-    )
+    return Response({'results': normalized})

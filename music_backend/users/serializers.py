@@ -48,6 +48,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     """Public profile — read-only representation."""
     playlist_count = serializers.SerializerMethodField()
+    favorites_count = serializers.SerializerMethodField()
     frequent_songs = serializers.SerializerMethodField()
 
     class Meta:
@@ -60,6 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'created_at',
             'playlist_count',
+            'favorites_count',
             'frequent_songs',
         ]
         read_only_fields = ['id', 'created_at']
@@ -67,15 +69,31 @@ class UserSerializer(serializers.ModelSerializer):
     def get_playlist_count(self, obj):
         return obj.playlists.count()
 
+    def get_favorites_count(self, obj):
+        return obj.favorite_songs.count()
+
     def get_frequent_songs(self, obj):
         top_tracks = (
             PlaylistTrack.objects
             .filter(playlist__owner=obj)
-            .values('track__title')
+            .values('track__title', 'track__artist', 'track__duration')
             .annotate(play_count=Count('track'))
             .order_by('-play_count', 'track__title')[:5]
         )
-        return [item['track__title'] for item in top_tracks if item['track__title']]
+        result = []
+        for item in top_tracks:
+            title = item.get('track__title')
+            if not title:
+                continue
+            result.append(
+                {
+                    'title': title,
+                    'artist': item.get('track__artist') or 'Unknown Artist',
+                    'duration': item.get('track__duration') or 0,
+                    'play_count': item.get('play_count') or 0,
+                }
+            )
+        return result
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

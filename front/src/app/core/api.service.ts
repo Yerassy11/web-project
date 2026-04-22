@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthResponse, Playlist, Track, UserProfile } from './api.models';
+import { AuthResponse, InternetSongResult, Playlist, Track, UserProfile } from './api.models';
 
 interface LoginPayload {
   email: string;
@@ -65,6 +65,12 @@ export class ApiService {
     return this.http.get<Track[]>(`${this.baseUrl}/music/library-songs/`);
   }
 
+  searchInternetSongs(query: string): Observable<{ results: InternetSongResult[] }> {
+    return this.http.get<{ results: InternetSongResult[] }>(`${this.baseUrl}/music/internet-search/`, {
+      params: { q: query.trim() }
+    });
+  }
+
   playlists(): Observable<Playlist[]> {
     const headers = this.accessToken ? this.authHeaders() : undefined;
     return this.http.get<Playlist[]>(`${this.baseUrl}/playlists/`, { headers });
@@ -79,18 +85,32 @@ export class ApiService {
     return this.http.post<Playlist>(`${this.baseUrl}/playlists/`, payload, { headers: this.authHeaders() });
   }
 
-  addTrackToPlaylist(playlistId: number, songTitle: string, position = 0): Observable<Playlist> {
+  addTrackToPlaylist(
+    playlistId: number,
+    songTitle: string,
+    position = 0,
+    extra?: { artist?: string; preview_url?: string }
+  ): Observable<Playlist> {
     return this.http.post<Playlist>(
       `${this.baseUrl}/playlists/${playlistId}/tracks/add/`,
-      { song_title: songTitle, position },
+      {
+        song_title: songTitle,
+        position,
+        artist: extra?.artist ?? '',
+        preview_url: extra?.preview_url ?? ''
+      },
       { headers: this.authHeaders() }
     );
   }
 
-  likeSong(songTitle: string): Observable<Track> {
+  likeSong(songTitle: string, extra?: { artist?: string; preview_url?: string }): Observable<Track> {
     return this.http.post<Track>(
       `${this.baseUrl}/music/favsongs/`,
-      { song_title: songTitle },
+      {
+        song_title: songTitle,
+        artist: extra?.artist ?? '',
+        preview_url: extra?.preview_url ?? ''
+      },
       { headers: this.authHeaders() }
     );
   }

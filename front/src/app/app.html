@@ -6,13 +6,28 @@
       <a routerLink="/favsongs" routerLinkActive="active">Favorite Songs</a>
       <a routerLink="/playlists" routerLinkActive="active">Playlists</a>
       <a routerLink="/profile" routerLinkActive="active">Profile</a>
-      @if (!api.isAuthenticated) {
-        <a routerLink="/auth" routerLinkActive="active">Auth</a>
-      }
     </nav>
-    <button class="btn btn-ghost" type="button" (click)="logout()" [disabled]="!api.isAuthenticated">
-      Logout
-    </button>
+    <div class="auth-actions">
+      <div class="search-pill" [class.open]="searchOpen">
+        <button class="btn btn-ghost icon-btn" type="button" (click)="toggleSearch()" title="Search songs">
+          🔍
+        </button>
+        <input
+          #headerSearchInput
+          type="text"
+          [(ngModel)]="searchQuery"
+          name="searchQuery"
+          placeholder="Search songs"
+          (keydown.enter)="submitSearch()"
+          (keydown.escape)="closeSearch()"
+        />
+      </div>
+      @if (api.isAuthenticated) {
+        <button class="btn btn-ghost" type="button" (click)="logout()">Logout</button>
+      } @else {
+        <a class="btn btn-ghost" routerLink="/auth" routerLinkActive="active">Login</a>
+      }
+    </div>
   </header>
 
   <main>

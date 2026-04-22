@@ -13,43 +13,52 @@ import { Playlist } from '../core/api.models';
     <section class="card endpoint-card">
       <h2>Playlists</h2>
 
-      @if (statusMessage()) {
-        <p class="status">{{ statusMessage() }}</p>
-      }
-      @if (error()) {
-        <p class="status">{{ error() }}</p>
-      }
+      @if (!api.isAuthenticated) {
+        <article class="card auth-warning">
+          <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
+          <h3>Oops, you are not authorized</h3>
+          <p class="muted">Please log in to open the Playlists section.</p>
+          <a class="btn btn-primary" routerLink="/auth">Login</a>
+        </article>
+      } @else {
+        @if (statusMessage()) {
+          <p class="status">{{ statusMessage() }}</p>
+        }
+        @if (error()) {
+          <p class="status">{{ error() }}</p>
+        }
 
-      <div class="playlists-layout">
-        <div class="playlists-column">
-          <h3>Added Playlists</h3>
-          <div class="cards-grid">
-            @for (playlist of playlists(); track playlist.id) {
-              <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
-                <h4>{{ playlist.name }}</h4>
-                <p class="muted">{{ playlist.description || 'No description' }}</p>
-                <p><strong>Tracks:</strong> {{ playlist.track_count }}</p>
-                <p><strong>Visibility:</strong> {{ playlist.is_public ? 'Public' : 'Private' }}</p>
-              </a>
-            }
+        <div class="playlists-layout">
+          <div class="playlists-column">
+            <h3>Added Playlists</h3>
+            <div class="cards-grid">
+              @for (playlist of playlists(); track playlist.id) {
+                <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
+                  <h4>{{ playlist.name }}</h4>
+                  <p class="muted">{{ playlist.description || 'No description' }}</p>
+                  <p><strong>Tracks:</strong> {{ playlist.track_count }}</p>
+                  <p><strong>Visibility:</strong> {{ playlist.is_public ? 'Public' : 'Private' }}</p>
+                </a>
+              }
+            </div>
           </div>
-        </div>
 
-        <aside class="create-column">
-          <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
-            <h3>Create Playlist</h3>
-            <label>Name <input type="text" formControlName="name" /></label>
-            <label>Description <input type="text" formControlName="description" /></label>
-            <label class="inline-checkbox">
-              <input type="checkbox" formControlName="is_public" />
-              Public playlist
-            </label>
-            <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
-              {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
-            </button>
-          </form>
-        </aside>
-      </div>
+          <aside class="create-column">
+            <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
+              <h3>Create Playlist</h3>
+              <label>Name <input type="text" formControlName="name" /></label>
+              <label>Description <input type="text" formControlName="description" /></label>
+              <label class="inline-checkbox">
+                <input type="checkbox" formControlName="is_public" />
+                Public playlist
+              </label>
+              <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
+                {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
+              </button>
+            </form>
+          </aside>
+        </div>
+      }
     </section>
   `,
   styles: [
@@ -57,6 +66,19 @@ import { Playlist } from '../core/api.models';
       .endpoint-card {
         display: grid;
         gap: 1rem;
+      }
+
+      .auth-warning {
+        display: grid;
+        gap: 0.65rem;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .unauthorized-image {
+        width: min(220px, 70vw);
+        height: auto;
+        display: block;
       }
 
       .playlists-layout {
@@ -148,7 +170,7 @@ export class PlaylistsPageComponent implements OnInit {
   readonly creatingPlaylist = signal(false);
   readonly playlistForm;
 
-  constructor(private readonly api: ApiService, private readonly fb: FormBuilder) {
+  constructor(public readonly api: ApiService, private readonly fb: FormBuilder) {
     this.playlistForm = this.fb.nonNullable.group({
       name: ['', [Validators.required]],
       description: [''],
@@ -157,6 +179,9 @@ export class PlaylistsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (!this.api.isAuthenticated) {
+      return;
+    }
     this.loadPlaylists();
   }
 
