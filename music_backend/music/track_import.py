@@ -8,13 +8,18 @@ from django.utils.text import slugify
 from .models import Track
 
 
-def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url=''):
+def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url='', artwork_url=''):
     title = (song_title or '').strip()
     if not title:
         return None
 
     track = Track.objects.filter(title=title).first()
     if track is not None:
+        normalized_artwork = (artwork_url or '').strip()
+        # Keep existing artwork, but enrich older records that do not have it yet.
+        if normalized_artwork and not (track.artwork_url or '').strip():
+            track.artwork_url = normalized_artwork
+            track.save(update_fields=['artwork_url'])
         return track
 
     media_root = Path(settings.MEDIA_ROOT)
@@ -29,6 +34,7 @@ def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url='
             return Track.objects.create(
                 title=title,
                 artist=(artist or 'Unknown Artist').strip() or 'Unknown Artist',
+                artwork_url=(artwork_url or '').strip(),
                 audio_file=relative_audio_path,
                 duration=0,
                 genre='',
@@ -43,6 +49,7 @@ def get_or_create_track(song_title, user, artist='Unknown Artist', preview_url='
             return Track.objects.create(
                 title=title,
                 artist=(artist or 'Unknown Artist').strip() or 'Unknown Artist',
+                artwork_url=(artwork_url or '').strip(),
                 audio_file=downloaded_path,
                 duration=0,
                 genre='',

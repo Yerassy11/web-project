@@ -108,8 +108,15 @@ def playlist_add_track(request, pk):
 
     song_title = serializer.validated_data['song_title'].strip()
     artist = serializer.validated_data.get('artist', 'Unknown Artist')
+    artwork_url = serializer.validated_data.get('artwork_url', '')
     preview_url = serializer.validated_data.get('preview_url', '')
-    track = get_or_create_track(song_title, request.user, artist=artist, preview_url=preview_url)
+    track = get_or_create_track(
+        song_title,
+        request.user,
+        artist=artist,
+        preview_url=preview_url,
+        artwork_url=artwork_url,
+    )
     if track is None:
         return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
 

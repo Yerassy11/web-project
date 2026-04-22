@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { InternetSongResult, Playlist } from '../core/api.models';
 import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordinator.service';
@@ -41,7 +41,11 @@ import { PlayerService } from '../core/player.service';
         <div class="results-list">
           @for (song of results(); track song.title + song.artist) {
             <article class="card result-item">
-              <div class="meta-row">
+              <a
+                class="meta-row song-open-link"
+                [routerLink]="['/song', song.title]"
+                [queryParams]="songQueryParams(song)"
+              >
                 @if (song.artwork_url) {
                   <img [src]="song.artwork_url" alt="Artwork" />
                 }
@@ -50,7 +54,7 @@ import { PlayerService } from '../core/player.service';
                   <p class="muted">{{ song.artist }}</p>
                   <p class="muted small">Source: {{ song.source }}</p>
                 </div>
-              </div>
+              </a>
 
               @if (song.preview_url) {
                 <audio
@@ -139,6 +143,16 @@ import { PlayerService } from '../core/player.service';
         display: flex;
         gap: 0.7rem;
         align-items: center;
+      }
+
+      .song-open-link {
+        text-decoration: none;
+        border-radius: 12px;
+        padding: 0.2rem;
+      }
+
+      .song-open-link:hover {
+        background: rgba(255, 255, 255, 0.04);
       }
 
       .meta-row img {
@@ -243,6 +257,17 @@ export class SearchPageComponent implements OnInit {
     void this.router.navigate(['/search'], { queryParams: { q } });
   }
 
+  songQueryParams(song: InternetSongResult): Record<string, string> {
+    return {
+      from: 'search',
+      q: this.query.trim(),
+      artist: song.artist || '',
+      artwork: song.artwork_url || '',
+      preview: song.preview_url || '',
+      source: song.source || ''
+    };
+  }
+
   menuKey(song: InternetSongResult): string {
     return `${song.title}::${song.artist}`;
   }
@@ -259,7 +284,11 @@ export class SearchPageComponent implements OnInit {
     }
 
     this.api
-      .addTrackToPlaylist(playlist.id, song.title, 0, { artist: song.artist, preview_url: song.preview_url })
+      .addTrackToPlaylist(playlist.id, song.title, 0, {
+        artist: song.artist,
+        preview_url: song.preview_url,
+        artwork_url: song.artwork_url
+      })
       .subscribe({
         next: () => {
           this.actionMessage.set(`Added "${song.title}" to playlist "${playlist.name}".`);
@@ -277,7 +306,13 @@ export class SearchPageComponent implements OnInit {
       return;
     }
 
-    this.api.likeSong(song.title, { artist: song.artist, preview_url: song.preview_url }).subscribe({
+    this.api
+      .likeSong(song.title, {
+        artist: song.artist,
+        preview_url: song.preview_url,
+        artwork_url: song.artwork_url
+      })
+      .subscribe({
       next: () => {
         this.actionMessage.set(`Added "${song.title}" to favorites.`);
       },

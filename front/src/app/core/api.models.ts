@@ -30,6 +30,7 @@ export interface AuthResponse {
 export interface Track {
   title: string;
   artist: string;
+  artwork_url: string;
   audio_file: string;
   duration: number;
   genre: string;

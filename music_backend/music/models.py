@@ -6,6 +6,7 @@ class Track(models.Model):
     # Songs are identified by title in API/business logic.
     title = models.CharField(max_length=200, unique=True)
     artist = models.CharField(max_length=200)
+    artwork_url = models.URLField(blank=True, default='')
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

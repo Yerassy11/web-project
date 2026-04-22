@@ -37,8 +37,15 @@ def favsong_list_create(request):
     action.is_valid(raise_exception=True)
     song_title = action.validated_data['song_title']
     artist = action.validated_data.get('artist', 'Unknown Artist')
+    artwork_url = action.validated_data.get('artwork_url', '')
     preview_url = action.validated_data.get('preview_url', '')
-    track = get_or_create_track(song_title, request.user, artist=artist, preview_url=preview_url)
+    track = get_or_create_track(
+        song_title,
+        request.user,
+        artist=artist,
+        preview_url=preview_url,
+        artwork_url=artwork_url,
+    )
     if track is None:
         return Response({'detail': 'Song not found in library.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -96,6 +103,7 @@ def library_songs(request):
         by_title[title] = {
             'title': title,
             'artist': 'Unknown Artist',
+            'artwork_url': '',
             'audio_file': f'{media_url}/{rel}',
             'duration': 0,
             'genre': '',

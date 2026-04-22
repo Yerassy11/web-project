@@ -90,9 +90,17 @@ import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordina
               @for (track of current.tracks; track track.title) {
                 <article class="song-card">
                   <div class="song-head">
-                    <div>
+                    <div class="song-meta">
+                      @if (track.artwork_url) {
+                        <img class="song-cover" [src]="track.artwork_url" [alt]="track.title + ' cover'" />
+                      } @else {
+                        <div class="song-cover song-cover-placeholder">♪</div>
+                      }
+
+                      <a class="song-open-link" [routerLink]="['/song', track.title]">
                       <h3>{{ track.title }}</h3>
                       <p class="muted">{{ track.artist }}</p>
+                      </a>
                     </div>
                     <div class="song-actions">
                       <button class="btn btn-like" type="button" (click)="toggleFavorite(track)">
@@ -238,8 +246,41 @@ import { AudioPlaybackCoordinatorService } from '../core/audio-playback-coordina
       .song-head {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.7rem;
+      }
+
+      .song-meta {
+        display: flex;
         align-items: center;
         gap: 0.7rem;
+      }
+
+      .song-open-link {
+        text-decoration: none;
+        border-radius: 10px;
+        padding: 0.12rem;
+      }
+
+      .song-open-link:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .song-cover {
+        width: 54px;
+        height: 54px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        flex: 0 0 auto;
+      }
+
+      .song-cover-placeholder {
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 1.15rem;
       }
 
       .song-actions {
@@ -386,7 +427,7 @@ export class PlaylistDetailPageComponent implements OnInit {
       return;
     }
 
-    this.api.likeSong(title).subscribe({
+    this.api.likeSong(title, { artist: track.artist, artwork_url: track.artwork_url }).subscribe({
       next: () => {
         this.favoriteTitles.update((items) => (items.includes(title) ? items : [...items, title]));
         this.showAction(`Added "${title}" to favorites.`, 'success');

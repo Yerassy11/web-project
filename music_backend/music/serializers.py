@@ -10,6 +10,7 @@ class FavoriteSongWriteSerializer(serializers.Serializer):
     """
     title      = serializers.CharField(max_length=200)
     artist     = serializers.CharField(max_length=200)
+    artwork_url = serializers.URLField(required=False, allow_blank=True)
     audio_file = serializers.FileField()
     duration   = serializers.IntegerField(min_value=0, default=0)
     genre      = serializers.CharField(max_length=100, required=False, allow_blank=True)
@@ -33,7 +34,7 @@ class FavoriteSongSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Track
         fields = [
-            'title', 'artist', 'audio_file', 'duration',
+            'title', 'artist', 'artwork_url', 'audio_file', 'duration',
             'genre',
             'uploaded_by', 'uploaded_by_username',
             'created_at', 'updated_at',
@@ -44,6 +45,7 @@ class FavoriteSongSerializer(serializers.ModelSerializer):
 class FavoriteSongActionSerializer(serializers.Serializer):
     song_title = serializers.CharField(max_length=200)
     artist = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    artwork_url = serializers.URLField(required=False, allow_blank=True)
     preview_url = serializers.URLField(required=False, allow_blank=True)
 
     def validate_song_title(self, value):

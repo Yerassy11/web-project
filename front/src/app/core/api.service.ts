@@ -89,7 +89,7 @@ export class ApiService {
     playlistId: number,
     songTitle: string,
     position = 0,
-    extra?: { artist?: string; preview_url?: string }
+    extra?: { artist?: string; preview_url?: string; artwork_url?: string }
   ): Observable<Playlist> {
     return this.http.post<Playlist>(
       `${this.baseUrl}/playlists/${playlistId}/tracks/add/`,
@@ -97,19 +97,21 @@ export class ApiService {
         song_title: songTitle,
         position,
         artist: extra?.artist ?? '',
-        preview_url: extra?.preview_url ?? ''
+        preview_url: extra?.preview_url ?? '',
+        artwork_url: extra?.artwork_url ?? ''
       },
       { headers: this.authHeaders() }
     );
   }
 
-  likeSong(songTitle: string, extra?: { artist?: string; preview_url?: string }): Observable<Track> {
+  likeSong(songTitle: string, extra?: { artist?: string; preview_url?: string; artwork_url?: string }): Observable<Track> {
     return this.http.post<Track>(
       `${this.baseUrl}/music/favsongs/`,
       {
         song_title: songTitle,
         artist: extra?.artist ?? '',
-        preview_url: extra?.preview_url ?? ''
+        preview_url: extra?.preview_url ?? '',
+        artwork_url: extra?.artwork_url ?? ''
       },
       { headers: this.authHeaders() }
     );

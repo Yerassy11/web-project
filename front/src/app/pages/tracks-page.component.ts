@@ -10,7 +10,7 @@ import { PlayerService } from '../core/player.service';
   selector: 'app-tracks-page',
   imports: [RouterLink],
   template: `
-    <section class="card endpoint-card">
+    <section class="card endpoint-card" (click)="closeMenu()">
       <h2>Favorite Songs</h2>
 
       @if (!api.isAuthenticated) {
@@ -31,8 +31,31 @@ import { PlayerService } from '../core/player.service';
           <div class="tracks-list">
             @for (track of tracks(); track track.title) {
               <article class="card track-item">
-                <h3>{{ track.title }}</h3>
-                <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
+                <div class="track-head">
+                  <a class="track-meta track-open-link" [routerLink]="['/song', track.title]" (click)="$event.stopPropagation()">
+                    @if (track.artwork_url) {
+                      <img class="track-cover" [src]="track.artwork_url" [alt]="track.title + ' cover'" />
+                    } @else {
+                      <div class="track-cover track-cover-placeholder">♪</div>
+                    }
+                    <div>
+                      <h3>{{ track.title }}</h3>
+                      <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
+                    </div>
+                  </a>
+
+                  <div class="menu-wrap">
+                    <button class="menu-btn" type="button" (click)="toggleMenu(track.title, $event)">⋯</button>
+
+                    @if (openedMenuTitle() === track.title) {
+                      <div class="menu-dropdown" (click)="$event.stopPropagation()">
+                        <button class="menu-danger" type="button" (click)="removeFromFavorites(track)">
+                          Remove from favorites
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
                 <audio
                   [src]="track.audio_file"
                   controls
@@ -75,6 +98,86 @@ import { PlayerService } from '../core/player.service';
       .track-item {
         display: grid;
         gap: 0.45rem;
+        position: relative;
+      }
+
+      .track-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.7rem;
+      }
+
+      .track-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .track-open-link {
+        text-decoration: none;
+        border-radius: 12px;
+        padding: 0.18rem;
+      }
+
+      .track-open-link:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .menu-wrap {
+        position: relative;
+      }
+
+      .menu-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        color: #e7edff;
+        font-size: 1.2rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .menu-dropdown {
+        position: absolute;
+        top: calc(100% + 0.35rem);
+        right: 0;
+        min-width: 190px;
+        padding: 0.4rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(10, 14, 32, 0.96);
+        z-index: 15;
+      }
+
+      .menu-danger {
+        width: 100%;
+        border: 1px solid rgba(255, 109, 178, 0.4);
+        background: rgba(255, 109, 178, 0.1);
+        color: #ffd8ea;
+        padding: 0.5rem 0.65rem;
+        border-radius: 10px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .track-cover {
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        flex: 0 0 auto;
+      }
+
+      .track-cover-placeholder {
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 1.15rem;
       }
     `
   ]
@@ -82,6 +185,7 @@ import { PlayerService } from '../core/player.service';
 export class TracksPageComponent implements OnInit {
   readonly tracks = signal<Track[]>([]);
   readonly globalError = signal('');
+  readonly openedMenuTitle = signal<string | null>(null);
 
   constructor(
     public readonly api: ApiService,
@@ -119,6 +223,28 @@ export class TracksPageComponent implements OnInit {
       return;
     }
     this.audioCoordinator.releaseInlineAudio(audio);
+  }
+
+  toggleMenu(trackTitle: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openedMenuTitle.update((current) => (current === trackTitle ? null : trackTitle));
+  }
+
+  removeFromFavorites(track: Track): void {
+    this.globalError.set('');
+    this.api.unlikeSong(track.title).subscribe({
+      next: () => {
+        this.tracks.update((items) => items.filter((item) => item.title !== track.title));
+        this.openedMenuTitle.set(null);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.globalError.set(`Could not remove from favorites: ${this.extractError(error)}`);
+      }
+    });
+  }
+
+  closeMenu(): void {
+    this.openedMenuTitle.set(null);
   }
 
   private extractError(error: HttpErrorResponse): string {
