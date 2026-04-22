@@ -8,6 +8,8 @@ urlpatterns = [
     path('login/',    views.login_view,    name='auth-login'),
     path('logout/',   views.LogoutView.as_view(), name='auth-logout'),
     path('me/',       views.MeView.as_view(),     name='auth-me'),
+    path('password-reset/request/', views.password_reset_request_view, name='auth-password-reset-request'),
+    path('password-reset/confirm/', views.password_reset_confirm_view, name='auth-password-reset-confirm'),
 
     # JWT token refresh (built-in)
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
