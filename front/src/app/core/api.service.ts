@@ -123,6 +123,17 @@ export class ApiService {
     });
   }
 
+  getRecommendations(options?: { genres?: string[]; artists?: string[]; limit?: number }): Observable<{ results: Track[]; meta: { genres_used: string[]; artists_used: string[]; count: number } }> {
+    const params: Record<string, string> = {};
+    if (options?.genres?.length) params['genres'] = options.genres.join(',');
+    if (options?.artists?.length) params['artists'] = options.artists.join(',');
+    if (options?.limit) params['limit'] = String(options.limit);
+    const headers = this.accessToken ? this.authHeaders() : undefined;
+    return this.http.get<{ results: Track[]; meta: { genres_used: string[]; artists_used: string[]; count: number } }>(
+      `${this.baseUrl}/music/recommendations/`, { params, headers }
+    );
+  }
+
   saveTokens(tokens: { access: string; refresh: string }): void {
     this.accessToken = tokens.access;
     this.refreshToken = tokens.refresh;
