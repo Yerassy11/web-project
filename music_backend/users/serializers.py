@@ -7,7 +7,6 @@ from playlists.models import PlaylistTrack
 User = get_user_model()
 
 
-# ── serializers.Serializer (requirement) ──────────────────────────────────────
 class RegisterSerializer(serializers.Serializer):
     """Plain Serializer for registration — full manual validation."""
 
@@ -61,7 +60,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
-# ── serializers.ModelSerializer (requirement) ─────────────────────────────────
 class UserSerializer(serializers.ModelSerializer):
     """Public profile — read-only representation."""
     playlist_count = serializers.SerializerMethodField()
