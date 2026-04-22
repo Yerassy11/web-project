@@ -1,5 +1,4 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { PlayerService } from '../core/player.service';
@@ -12,7 +11,7 @@ interface Preference {
 
 @Component({
   selector: 'app-recommendations-page',
-  imports: [NgClass, RouterLink],
+  imports: [RouterLink],
   template: `
     <section class="reco-page">
 

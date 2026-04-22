@@ -39,8 +39,8 @@ def recommendations(request):
         fav_tracks = Track.objects.filter(favorite_entries__user=user)
         db_genres = list(fav_tracks.values_list('genre', flat=True).distinct())
         db_artists = list(fav_tracks.values_list('artist', flat=True).distinct())
-        genres = list({g.lower() for g in db_genres if g}) | param_genres
-        artists = list({a.lower() for a in db_artists if a}) | param_artists
+        genres = list({g.lower() for g in db_genres if g} | set(param_genres))
+        artists = list({a.lower() for a in db_artists if a} | set(param_artists))
     else:
         genres = param_genres
         artists = param_artists

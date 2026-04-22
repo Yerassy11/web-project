@@ -10,67 +10,169 @@ import { PlayerService } from '../core/player.service';
   selector: 'app-tracks-page',
   imports: [RouterLink],
   template: `
-    <section class="card endpoint-card" (click)="closeMenu()">
-      <h2>Favorite Songs</h2>
+    <section class="tracks-page">
+      <div class="favorites-hero card">
+        <div class="hero-bg">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">YOUR FAVORITES</p>
+          <h1>Favorite <span class="gradient-text">Songs</span></h1>
+          <p class="hero-sub">All liked tracks in one place. Revisit, play, and manage your collection.</p>
+        </div>
+        <img class="hero-illustration wobble" src="/assets/favsongs.png" alt="Favorite songs hearts" />
+      </div>
 
-      @if (!api.isAuthenticated) {
-        <article class="card auth-warning">
-          <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
-          <h3>Oops, you are not authorized</h3>
-          <p class="muted">Please log in to open the Favorite Songs section.</p>
-          <a class="btn btn-primary" routerLink="/auth">Login</a>
-        </article>
-      } @else {
-        @if (globalError()) {
-          <p class="status">{{ globalError() }}</p>
-        }
-
-        @if (!tracks().length && !globalError()) {
-          <p class="muted">No favorite songs yet. Like songs from playlists to see them here.</p>
+      <section class="card endpoint-card" (click)="closeMenu()">
+        @if (!api.isAuthenticated) {
+          <article class="card auth-warning">
+            <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
+            <h3>Oops, you are not authorized</h3>
+            <p class="muted">Please log in to open the Favorite Songs section.</p>
+            <a class="btn btn-primary" routerLink="/auth">Login</a>
+          </article>
         } @else {
-          <div class="tracks-list">
-            @for (track of tracks(); track track.title) {
-              <article class="card track-item">
-                <div class="track-head">
-                  <a class="track-meta track-open-link" [routerLink]="['/song', track.title]" (click)="$event.stopPropagation()">
-                    @if (track.artwork_url) {
-                      <img class="track-cover" [src]="track.artwork_url" [alt]="track.title + ' cover'" />
-                    } @else {
-                      <div class="track-cover track-cover-placeholder">♪</div>
-                    }
-                    <div>
-                      <h3>{{ track.title }}</h3>
-                      <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
-                    </div>
-                  </a>
+          @if (globalError()) {
+            <p class="status">{{ globalError() }}</p>
+          }
 
-                  <div class="menu-wrap">
-                    <button class="menu-btn" type="button" (click)="toggleMenu(track.title, $event)">⋯</button>
-
-                    @if (openedMenuTitle() === track.title) {
-                      <div class="menu-dropdown" (click)="$event.stopPropagation()">
-                        <button class="menu-danger" type="button" (click)="removeFromFavorites(track)">
-                          Remove from favorites
-                        </button>
+          @if (!tracks().length && !globalError()) {
+            <p class="muted">No favorite songs yet. Like songs from playlists to see them here.</p>
+          } @else {
+            <div class="tracks-list">
+              @for (track of tracks(); track track.title) {
+                <article class="card track-item">
+                  <div class="track-head">
+                    <a class="track-meta track-open-link" [routerLink]="['/song', track.title]" (click)="$event.stopPropagation()">
+                      @if (track.artwork_url) {
+                        <img class="track-cover" [src]="track.artwork_url" [alt]="track.title + ' cover'" />
+                      } @else {
+                        <div class="track-cover track-cover-placeholder">♪</div>
+                      }
+                      <div>
+                        <h3>{{ track.title }}</h3>
+                        <p class="muted">{{ track.artist }} · {{ track.genre || 'No genre' }}</p>
                       </div>
-                    }
+                    </a>
+
+                    <div class="menu-wrap">
+                      <button class="menu-btn" type="button" (click)="toggleMenu(track.title, $event)">⋯</button>
+
+                      @if (openedMenuTitle() === track.title) {
+                        <div class="menu-dropdown" (click)="$event.stopPropagation()">
+                          <button class="menu-danger" type="button" (click)="removeFromFavorites(track)">
+                            Remove from favorites
+                          </button>
+                        </div>
+                      }
+                    </div>
                   </div>
-                </div>
-                <audio
-                  [src]="track.audio_file"
-                  controls
-                  (play)="onInlineAudioPlay($event)"
-                  (ended)="onInlineAudioEnded($event)"
-                ></audio>
-              </article>
-            }
-          </div>
+                  <audio
+                    [src]="track.audio_file"
+                    controls
+                    (play)="onInlineAudioPlay($event)"
+                    (ended)="onInlineAudioEnded($event)"
+                  ></audio>
+                </article>
+              }
+            </div>
+          }
         }
-      }
+      </section>
     </section>
   `,
   styles: [
     `
+      .tracks-page {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .favorites-hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 210px;
+        display: flex;
+        align-items: center;
+      }
+
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.35;
+      }
+
+      .orb-1 {
+        width: 240px;
+        height: 240px;
+        background: radial-gradient(circle, #ff6db2, transparent);
+        top: -95px;
+        left: -60px;
+      }
+
+      .orb-2 {
+        width: 190px;
+        height: 190px;
+        background: radial-gradient(circle, #7a87ff, transparent);
+        right: 18%;
+        bottom: -75px;
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        gap: 0.65rem;
+        max-width: 560px;
+      }
+
+      .hero-content h1 {
+        font-size: clamp(1.7rem, 3.8vw, 2.5rem);
+      }
+
+      .hero-sub {
+        color: var(--muted);
+        max-width: 52ch;
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, #7a87ff, #ff6db2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-illustration {
+        position: absolute;
+        right: 1.1rem;
+        bottom: -10px;
+        width: min(270px, 32vw);
+        opacity: 0.42;
+        pointer-events: none;
+        z-index: 1;
+        filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.35));
+      }
+
+      .wobble {
+        animation: gentle-wobble 4.4s ease-in-out infinite;
+        transform-origin: center bottom;
+      }
+
+      @keyframes gentle-wobble {
+        0%, 100% { transform: rotate(0deg) translateY(0); }
+        25% { transform: rotate(2.2deg) translateY(-4px); }
+        50% { transform: rotate(-1.8deg) translateY(-2px); }
+        75% { transform: rotate(1.4deg) translateY(-5px); }
+      }
+
       .endpoint-card {
         display: grid;
         gap: 1rem;
@@ -178,6 +280,19 @@ import { PlayerService } from '../core/player.service';
         color: var(--muted);
         background: rgba(255, 255, 255, 0.06);
         font-size: 1.15rem;
+      }
+
+      @media (max-width: 760px) {
+        .hero-illustration {
+          width: min(210px, 42vw);
+          right: 0.6rem;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .hero-illustration {
+          opacity: 0.25;
+        }
       }
     `
   ]

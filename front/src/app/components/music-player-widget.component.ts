@@ -1,12 +1,9 @@
 import { Component, signal, computed, HostListener } from '@angular/core';
-import { NgClass, NgStyle } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { PlayerService } from '../core/player.service';
 
 @Component({
   selector: 'app-music-player-widget',
   standalone: true,
-  imports: [NgClass, NgStyle, RouterLink],
   template: `
     <div class="player-widget" [class.expanded]="expanded()" [class.has-track]="!!player.currentTrack()">
 
