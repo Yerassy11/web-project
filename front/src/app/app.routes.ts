@@ -7,6 +7,7 @@ import { PlaylistDetailPageComponent } from './pages/playlist-detail-page.compon
 import { ProfilePageComponent } from './pages/profile-page.component';
 import { SearchPageComponent } from './pages/search-page.component';
 import { SongPageComponent } from './pages/song-page.component';
+import { RecommendationsPageComponent } from './pages/recommendations-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent, title: 'Shumaq - Home' },
@@ -17,5 +18,6 @@ export const routes: Routes = [
   { path: 'song/:title', component: SongPageComponent, title: 'Shumaq - Song' },
   { path: 'search', component: SearchPageComponent, title: 'Shumaq - Search' },
   { path: 'profile', component: ProfilePageComponent, title: 'Shumaq - Profile' },
+  { path: 'recommendations', component: RecommendationsPageComponent, title: 'Shumaq - Recommendations' },
   { path: '**', redirectTo: '' }
 ];
