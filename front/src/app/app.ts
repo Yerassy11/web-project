@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ApiService } from './core/api.service';
+import { MusicPlayerWidgetComponent } from './components/music-player-widget.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, MusicPlayerWidgetComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
