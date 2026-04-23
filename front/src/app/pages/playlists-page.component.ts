@@ -10,68 +10,177 @@ import { Playlist } from '../core/api.models';
   selector: 'app-playlists-page',
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <section class="card endpoint-card">
-      <h2>Playlists</h2>
-
-      @if (!api.isAuthenticated) {
-        <article class="card auth-warning">
-          <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
-          <h3>Oops, you are not authorized</h3>
-          <p class="muted">Please log in to open the Playlists section.</p>
-          <a class="btn btn-primary" routerLink="/auth">Login</a>
-        </article>
-      } @else {
-        @if (statusMessage()) {
-          <p class="status">{{ statusMessage() }}</p>
-        }
-        @if (error()) {
-          <p class="status">{{ error() }}</p>
-        }
-
-        <div class="playlists-layout">
-          <div class="playlists-column">
-            <h3>Playlists</h3>
-            <div class="cards-grid">
-              @for (playlist of playlists(); track playlist.id) {
-                <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
-                  <div class="playlist-cover">
-                    @if (coverFor(playlist); as cover) {
-                      <img [src]="cover" [alt]="playlist.name + ' cover'" />
-                    } @else {
-                      <div class="playlist-cover-fallback">🎵</div>
-                    }
-                  </div>
-
-                  <div class="playlist-content">
-                    <h4>{{ playlist.name }}</h4>
-                    <p class="muted description">{{ playlist.description || 'No description' }}</p>
-                    <p class="meta-line">{{ playlist.track_count }} tracks • {{ playlist.is_public ? 'Public' : 'Private' }}</p>
-                  </div>
-                </a>
-              }
-            </div>
-          </div>
-
-          <aside class="create-column">
-            <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
-              <h3>Create Playlist</h3>
-              <label>Name <input type="text" formControlName="name" /></label>
-              <label>Description <input type="text" formControlName="description" /></label>
-              <label class="inline-checkbox">
-                <input type="checkbox" formControlName="is_public" />
-                Public playlist
-              </label>
-              <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
-                {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
-              </button>
-            </form>
-          </aside>
+    <section class="playlists-page">
+      <div class="playlists-hero card">
+        <div class="hero-bg">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+          <div class="orb orb-3"></div>
         </div>
-      }
+        <div class="hero-content">
+          <p class="eyebrow">CURATED COLLECTIONS</p>
+          <h1>Your <span class="gradient-text">Playlists</span></h1>
+          <p class="hero-sub">Build mixes for every mood and keep your favorite tracks organized.</p>
+        </div>
+        <img class="hero-illustration spin" src="/assets/playlists.png" alt="Playlists artwork" />
+      </div>
+
+      <section class="card endpoint-card">
+        @if (!api.isAuthenticated) {
+          <article class="card auth-warning">
+            <img class="unauthorized-image" src="/assets/unauthorized.png" alt="Unauthorized access" />
+            <h3>Oops, you are not authorized</h3>
+            <p class="muted">Please log in to open the Playlists section.</p>
+            <a class="btn btn-primary" routerLink="/auth">Login</a>
+          </article>
+        } @else {
+          @if (statusMessage()) {
+            <p class="status">{{ statusMessage() }}</p>
+          }
+          @if (error()) {
+            <p class="status">{{ error() }}</p>
+          }
+
+          <div class="playlists-layout">
+            <div class="playlists-column">
+              <h3>Playlists</h3>
+              <div class="cards-grid">
+                @for (playlist of playlists(); track playlist.id) {
+                  <a class="card playlist-item" [routerLink]="['/playlists', playlist.id]">
+                    <div class="playlist-cover">
+                      @if (coverFor(playlist); as cover) {
+                        <img [src]="cover" [alt]="playlist.name + ' cover'" />
+                      } @else {
+                        <div class="playlist-cover-fallback">🎵</div>
+                      }
+                    </div>
+
+                    <div class="playlist-content">
+                      <h4>{{ playlist.name }}</h4>
+                      <p class="muted description">{{ playlist.description || 'No description' }}</p>
+                      <p class="meta-line">{{ playlist.track_count }} tracks • {{ playlist.is_public ? 'Public' : 'Private' }}</p>
+                    </div>
+                  </a>
+                }
+              </div>
+            </div>
+
+            <aside class="create-column">
+              <form [formGroup]="playlistForm" (ngSubmit)="createPlaylist()" class="create-form">
+                <h3>Create Playlist</h3>
+                <label>Name <input type="text" formControlName="name" /></label>
+                <label>Description <input type="text" formControlName="description" /></label>
+                <label class="inline-checkbox">
+                  <input type="checkbox" formControlName="is_public" />
+                  Public playlist
+                </label>
+                <button class="btn btn-primary" type="submit" [disabled]="playlistForm.invalid || creatingPlaylist()">
+                  {{ creatingPlaylist() ? 'Creating...' : 'Create playlist' }}
+                </button>
+              </form>
+            </aside>
+          </div>
+        }
+      </section>
     </section>
   `,
   styles: [
     `
+      .playlists-page {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .playlists-hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 210px;
+        display: flex;
+        align-items: center;
+      }
+
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.35;
+      }
+
+      .orb-1 {
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, #7a87ff, transparent);
+        top: -95px;
+        left: -55px;
+      }
+
+      .orb-2 {
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, #49d6ac, transparent);
+        right: 20%;
+        bottom: -60px;
+      }
+
+      .orb-3 {
+        width: 170px;
+        height: 170px;
+        background: radial-gradient(circle, #ff6db2, transparent);
+        right: -45px;
+        top: 12px;
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        gap: 0.65rem;
+        max-width: 560px;
+      }
+
+      .hero-content h1 {
+        font-size: clamp(1.7rem, 3.8vw, 2.5rem);
+      }
+
+      .hero-sub {
+        color: var(--muted);
+        max-width: 52ch;
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, #7a87ff, #49d6ac);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-illustration {
+        position: absolute;
+        right: 1.2rem;
+        bottom: -14px;
+        width: min(260px, 31vw);
+        opacity: 0.36;
+        pointer-events: none;
+        z-index: 1;
+        filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.35));
+      }
+
+      .spin {
+        animation: gentle-spin 16s linear infinite;
+        transform-origin: 50% 50%;
+      }
+
+      @keyframes gentle-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
       .endpoint-card {
         display: grid;
         gap: 24px;
@@ -228,6 +337,19 @@ import { Playlist } from '../core/api.models';
 
         .create-form {
           position: static;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .hero-illustration {
+          width: min(205px, 42vw);
+          right: 0.7rem;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .hero-illustration {
+          opacity: 0.22;
         }
       }
     `

@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
@@ -65,10 +65,30 @@ interface ArtistItem {
 
       <div class="genres-grid">
         @for (genre of genres; track genre.name) {
-          <button type="button" class="genre-card" [ngClass]="{ selected: isGenreSelected(genre.name) }" (click)="toggleGenre(genre.name)">
+          <article
+            class="genre-card"
+            [ngClass]="{ selected: isGenreSelected(genre.name) }"
+            tabindex="0"
+          >
             <img [src]="genre.image" [alt]="genre.name" />
             <span>{{ genre.name }}</span>
-          </button>
+            <div class="genre-actions" role="group" [attr.aria-label]="'Actions for ' + genre.name">
+              <button
+                type="button"
+                class="btn btn-primary action-btn"
+                (click)="toggleGenre(genre.name)"
+              >
+                Pick
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost action-btn"
+                (click)="openGenreDetails(genre)"
+              >
+                Show more
+              </button>
+            </div>
+          </article>
         }
       </div>
     </section>
@@ -221,12 +241,44 @@ interface ArtistItem {
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
       }
 
+      .genre-actions {
+        position: absolute;
+        left: 0.7rem;
+        right: 0.7rem;
+        bottom: 0.7rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
+        opacity: 0;
+        transform: translateY(8px);
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .action-btn {
+        justify-content: center;
+        padding: 0.45rem 0.55rem;
+        font-size: 0.92rem;
+      }
+
       .genre-card:hover {
         transform: scale(1.05);
         border-color: rgba(105, 255, 253, 0.7);
         box-shadow:
           0 0 18px rgba(103, 241, 255, 0.45),
           0 0 36px rgba(150, 66, 255, 0.28);
+      }
+
+      .genre-card:hover span,
+      .genre-card:focus-within span {
+        opacity: 0.12;
+      }
+
+      .genre-card:hover .genre-actions,
+      .genre-card:focus-within .genre-actions {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
       }
 
       .genre-card.selected {
@@ -332,10 +384,22 @@ interface ArtistItem {
           grid-template-columns: 1fr;
         }
       }
+
+      @media (hover: none), (pointer: coarse) {
+        .genre-card span {
+          opacity: 0.2;
+        }
+
+        .genre-actions {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+      }
     `
   ]
 })
-export class HomePageComponent {
+export class HomePageComponent implements OnInit {
   readonly genres: GenreItem[] = [
     { name: 'Lo-fi Hip Hop', image: '/assets/lofi.jpg' },
     { name: 'Phonk', image: '/assets/phonk.jpg' },
@@ -433,6 +497,18 @@ export class HomePageComponent {
 
   constructor(private readonly router: Router) {}
 
+  ngOnInit(): void {
+    const raw = localStorage.getItem('shumaq_onboarding_preferences');
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { genres?: string[]; artists?: string[] };
+      if (Array.isArray(parsed.genres)) this.selectedGenres.set(parsed.genres);
+      if (Array.isArray(parsed.artists)) this.selectedArtists.set(parsed.artists);
+    } catch {
+      // Ignore malformed localStorage payload.
+    }
+  }
+
   isGenreSelected(genre: string): boolean {
     return this.selectedGenres().includes(genre);
   }
@@ -445,22 +521,35 @@ export class HomePageComponent {
     this.selectedGenres.update((current) =>
       current.includes(genre) ? current.filter((item) => item !== genre) : [...current, genre]
     );
+    this.persistPreferences();
+  }
+
+  openGenreDetails(genre: GenreItem): void {
+    void this.router.navigate(['/genre', genre.name], {
+      queryParams: { image: genre.image }
+    });
   }
 
   toggleArtist(artist: string): void {
     this.selectedArtists.update((current) =>
       current.includes(artist) ? current.filter((item) => item !== artist) : [...current, artist]
     );
+    this.persistPreferences();
   }
 
   goToRegistration(): void {
-    const payload = {
-      genres: this.selectedGenres(),
-      artists: this.selectedArtists(),
-      savedAt: new Date().toISOString()
-    };
-
-    localStorage.setItem('shumaq_onboarding_preferences', JSON.stringify(payload));
+    this.persistPreferences();
     void this.router.navigateByUrl('/auth');
+  }
+
+  private persistPreferences(): void {
+    localStorage.setItem(
+      'shumaq_onboarding_preferences',
+      JSON.stringify({
+        genres: this.selectedGenres(),
+        artists: this.selectedArtists(),
+        savedAt: new Date().toISOString()
+      })
+    );
   }
 }
