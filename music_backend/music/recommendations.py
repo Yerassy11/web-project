@@ -18,13 +18,30 @@ from .models import Track, FavoriteSong
 from .serializers import FavoriteSongSerializer
 
 
+def _merge_preferences(*groups):
+    merged = []
+    seen = set()
+
+    for group in groups:
+        for item in group:
+            if not item or item in seen:
+                continue
+            seen.add(item)
+            merged.append(item)
+
+    return merged
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def recommendations(request):
     """
     GET /api/v1/music/recommendations/?limit=20&genres=lo-fi,phonk&artists=Joji,Keshi
     """
-    limit = min(int(request.query_params.get('limit', 20)), 50)
+    try:
+        limit = min(int(request.query_params.get('limit', 20)), 50)
+    except (TypeError, ValueError):
+        limit = 20
     user = request.user if request.user.is_authenticated else None
 
     # Optional manual genre/artist filters (from query params — used by the
@@ -39,8 +56,14 @@ def recommendations(request):
         fav_tracks = Track.objects.filter(favorite_entries__user=user)
         db_genres = list(fav_tracks.values_list('genre', flat=True).distinct())
         db_artists = list(fav_tracks.values_list('artist', flat=True).distinct())
-        genres = list({g.lower() for g in db_genres if g} | set(param_genres))
-        artists = list({a.lower() for a in db_artists if a} | set(param_artists))
+        genres = _merge_preferences(
+            [g.strip().lower() for g in db_genres if g and g.strip()],
+            param_genres,
+        )
+        artists = _merge_preferences(
+            [a.strip().lower() for a in db_artists if a and a.strip()],
+            param_artists,
+        )
     else:
         genres = param_genres
         artists = param_artists

@@ -15,6 +15,17 @@ interface RegisterPayload {
   password2: string;
 }
 
+interface PasswordResetRequestPayload {
+  email: string;
+}
+
+interface PasswordResetConfirmPayload {
+  uid: string;
+  token: string;
+  password: string;
+  password2: string;
+}
+
 interface PlaylistPayload {
   name: string;
   description: string;
@@ -39,6 +50,14 @@ export class ApiService {
 
   register(payload: RegisterPayload): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register/`, payload);
+  }
+
+  requestPasswordReset(payload: PasswordResetRequestPayload): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/auth/password-reset/request/`, payload);
+  }
+
+  confirmPasswordReset(payload: PasswordResetConfirmPayload): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/auth/password-reset/confirm/`, payload);
   }
 
   logout(): Observable<{ detail: string }> {

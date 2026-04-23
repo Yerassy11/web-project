@@ -7,7 +7,6 @@ from playlists.models import PlaylistTrack
 User = get_user_model()
 
 
-# ── serializers.Serializer (requirement) ──────────────────────────────────────
 class RegisterSerializer(serializers.Serializer):
     """Plain Serializer for registration — full manual validation."""
 
@@ -44,7 +43,23 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
-# ── serializers.ModelSerializer (requirement) ─────────────────────────────────
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({'password': 'Passwords do not match.'})
+        validate_password(attrs['password'])
+        return attrs
+
+
 class UserSerializer(serializers.ModelSerializer):
     """Public profile — read-only representation."""
     playlist_count = serializers.SerializerMethodField()
