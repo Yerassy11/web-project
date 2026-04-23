@@ -199,26 +199,7 @@ interface Preference {
       opacity: 0.35;
     }
 
-    .orb-1 {
-      width: 250px; height: 250px;
-      background: radial-gradient(circle, #7a87ff, transparent);
-      top: -80px; left: -60px;
-      animation: orb-drift 8s ease-in-out infinite;
-    }
-
-    .orb-2 {
-      width: 200px; height: 200px;
-      background: radial-gradient(circle, #ff6db2, transparent);
-      bottom: -60px; right: 20%;
-      animation: orb-drift 11s ease-in-out infinite reverse;
-    }
-
-    .orb-3 {
-      width: 180px; height: 180px;
-      background: radial-gradient(circle, #49d6ac, transparent);
-      top: 20px; right: -40px;
-      animation: orb-drift 9s ease-in-out infinite 2s;
-    }
+  
 
     @keyframes orb-drift {
       0%, 100% { transform: translate(0, 0) scale(1); }
@@ -240,12 +221,7 @@ interface Preference {
       letter-spacing: -0.02em;
     }
 
-    .gradient-text {
-      background: linear-gradient(135deg, #7a87ff, #ff6db2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+    
 
     .hero-sub {
       color: var(--muted);
